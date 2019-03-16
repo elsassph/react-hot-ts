@@ -1,0 +1,10 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "types": ["node"],
+        "lib": ["esnext"],
+        "sourceMap": true,
+        "jsx": "react"
+    }
+}

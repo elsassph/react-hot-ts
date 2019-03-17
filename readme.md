@@ -6,10 +6,12 @@ Add React Hot Module Replacement in your TypeScript project:
 - This is **TypeScript-native**, using a fancy compile-time AST transformer,
 - Supports both React component classes AND functional components,
 - [Webpack][1] + [ts-loader][2] ready, but can support other bundlers and loaders with sufficient HMR / transformer APIs,
+- Reliable HMR feature based on Dan Abramov's [react-proxy][3],
 - **Bonus:** ensures React functions and classes have a `name`, for enhanced debugging experience!
 
 [1]: https://webpack.js.org
 [2]: https://github.com/TypeStrong/ts-loader
+[3]: https://github.com/gaearon/react-proxy
 
 ## Installation
 
@@ -96,10 +98,10 @@ declare const NODE_ENV: string;
 // accept HMR for any child
 if (module.hot) module.hot.accept();
 
-// keep areference of the rendered application
+// keep a reference of the rendered application
 const appRoot = ReactDOM.render(<App/>);
 
-// listen for proxies notifications and force re-render the application
+// listen for updates and force re-render the application
 if (NODE_ENV === 'development') {
     require('react-hmr-ts').listen(getForceUpdate => {
         const forceUpdate = getForceUpdate(React);

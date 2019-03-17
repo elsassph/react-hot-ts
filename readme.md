@@ -116,7 +116,8 @@ Run Webpack dev server and enjoy live component updates!
 
 ### Functional components without `props` parameter
 
-Currently the transformer has a limitation: functional components **must** be declared with a `props` parameter:
+Currently the transformer has a limitation (to avoid false positives): 
+functional components **must** be declared with a (exactly) `props` parameter.
 
 ```typescript
 // OK
@@ -135,7 +136,7 @@ function renderText() {
 }
 ```
 
-**Workaround** is to use `prop` as argument.
+**Workaround** is to use `props` as argument.
 
 ### "Recursive" static class field initializers
 
@@ -156,6 +157,12 @@ class RecursiveStatic {
 ```
 
 **Workaround** is to declare the statics outside the class, or set `B.value` after the declaration of the class.
+
+### Only `.tsx` files are considered
+
+If you use `.ts` and manual `React.createComponent` code it won't be wrapped.
+
+**Workaround** is to use JSX ;)
 
 ## ISC License
 

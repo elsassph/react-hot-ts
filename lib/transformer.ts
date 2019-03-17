@@ -1,6 +1,6 @@
 import * as ts from 'typescript';
 
-const PROXY_MODULE = 'hmr-ts-transformer';
+const PROXY_MODULE = 'react-hmr-ts';
 const PROXY_WRAPPER = '_hmr_proxy_';
 const REACT_BASE_CLASSES = ['Component', 'React.Component', 'React.PureComponent'];
 

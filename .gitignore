@@ -1,6 +1,5 @@
 .vscode
 node_modules
-*.js
 lib/*.js
 test/dist
 *.tgz

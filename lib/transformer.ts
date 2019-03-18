@@ -235,17 +235,9 @@ function isReactFunction(node: ts.FunctionDeclaration | ts.FunctionExpression | 
 }
 
 function isReactClass(node: ts.ClassExpression | ts.ClassDeclaration) {
-	// lookup `extends` type and compare with expected React components base classes
-	if (!node.heritageClauses) return false;
-	let isReactClass = false;
-	node.heritageClauses.forEach(clause => {
-		clause.types &&
-			clause.types.forEach(type => {
-				const extName = getQualifiedName(type.expression);
-				if (reactBaseClasses.includes(extName)) isReactClass = true;
-			});
-	});
-	return isReactClass;
+	// assume a class with a base class and a `render` function are React classes (in `.tsx` files)
+	return (node.heritageClauses && node.heritageClauses.length > 0
+		&& node.members.find(member => getName(member) === 'render'));
 }
 
 /**

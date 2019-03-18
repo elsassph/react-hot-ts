@@ -31,7 +31,7 @@ Just 2 steps:
 
     See guide: https://webpack.js.org/guides/hot-module-replacement/#enabling-hmr
 
-2. Configure the TypeScript loader with a custom transformer
+2. Configure the TypeScript loader with a custom transformer (you can keep it in your production builds)
 
 ```javascript
 const hmrTransformer = require('react-hmr-ts/lib/transformer');
@@ -89,34 +89,23 @@ hmrTransformer({
 
 ## React usage
 
-Once the transformation is in place, you need to add the re-render logic in your application root, e.g. where you will call `ReactDOM.render`:
+Once the transformation is in place, you need to wrap your root `ReactDOM.render` call in your app entry point:
 
 ```typescript
-// use variable defined by Webpack, or your own
-declare const NODE_ENV: string;
+import { hot } from 'react-hmr-ts';
 
-// accept HMR for any child
-if (module.hot) module.hot.accept();
-
-// keep a reference of the rendered application
-const appRoot = ReactDOM.render(<App/>);
-
-// listen for updates and force re-render the application
-if (NODE_ENV === 'development') {
-    require('react-hmr-ts').listen(getForceUpdate => {
-        const forceUpdate = getForceUpdate(React);
-        forceUpdate(appRoot);
-    });
-}
+hot(module)( ReactDOM.render(<App/>) );
 ```
 
-Run Webpack dev server and enjoy live component updates!
+You can keep this code even for release, as **unless** building with `NODE_ENV=development` the HMR logic will be replaced by a no-op.
+
+Now run Webpack dev server and enjoy live component updates!
 
 ## Known issues
 
 ### Functional components without `props` parameter
 
-Currently the transformer has a limitation (to avoid false positives): 
+Currently the transformer has a limitation (to avoid false positives):
 functional components **must** be declared with a (exactly) `props` parameter.
 
 ```typescript

@@ -1,20 +1,34 @@
 const createProxy = require('react-proxy').createProxy;
-const getForceUpdate = require('react-proxy').getForceUpdate;
+const forceUpdate = require('react-deep-force-update');
 
 const proxies = (global._hmr_proxies_ = global._hmr_proxies_ || {});
 let dirtyTimer;
 let dirtyCallback;
 
 function notify() {
-	dirtyCallback && dirtyCallback(getForceUpdate);
+	dirtyCallback && dirtyCallback(forceUpdate(require('react')));
 }
 
+// allow handling events directly
 function listen(cb) {
 	dirtyCallback = cb;
 }
 
-// wrap/register declaration with the HMR proxy
-function wrap(type, name, source, decl) {
+// hot helper
+function hot(module) {
+	return function(node) {
+		if (module.hot) {
+			module.hot.accept();
+			listen(function(forceUpdate) {
+				forceUpdate(node);
+			});
+		}
+		return node;
+	}
+}
+
+// register declaration with the HMR proxy
+function register(type, name, source, decl) {
 	if (!decl.name && !decl.displayName) decl.displayName = name;
 
 	const key = name + type + '@' + source;
@@ -51,5 +65,6 @@ function createFunctionProxy(key, fn) {
 }
 
 // expose default / listen
-wrap.listen = listen;
-module.exports = wrap;
+register.listen = listen;
+register.hot = hot;
+module.exports = register;

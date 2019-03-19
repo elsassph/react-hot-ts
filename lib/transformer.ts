@@ -35,110 +35,145 @@ function hmrTransformer(options: HMRTransformerOptions) {
 		} else {
 			console.log('[react-hmr-ts] disabled for', env);
 		}
-		return () => node => node;
+		return prodTransformer;
 	}
 
 	applyOptions(options);
+	return devTransformer;
+}
 
-	return (context: ts.TransformationContext) => {
-		let fileName: string;
-		let addDefaults: string[];
-
-		const visitor = (node: ts.Node) => {
-			// visit files
-			if (ts.isSourceFile(node)) {
-				if (skipSourceFile(node)) return node;
-				// visit children
-				fileName = node.fileName;
-				addDefaults = [];
-				const visitedSource: ts.SourceFile = ts.visitEachChild(node, visitor, context);
-				// generate extra code
-				const statements = [
-					...declareWrappers(),
-					...visitedSource.statements,
-					...addDefaults.map(name => {
-						return ts.createExportDefault(ts.createIdentifier(name));
-					})
-				];
-				return ts.updateSourceFileNode(visitedSource, statements);
-			} else if (ts.isArrowFunction(node)) {
-				// match `foo = (props) => ...;`
-				if (isReactFunction(node)) {
-					const name = getName(node) || (ts.isVariableDeclaration(node.parent) && getName(node.parent));
-					// convert to `foo = function foo(props)` expression
-					const f = ts.createFunctionExpression(
-						undefined,
-						undefined,
-						name,
-						undefined,
-						node.parameters,
-						node.type,
-						ts.isBlock(node.body) ? node.body : ts.createBlock([ts.createReturn(node.body)])
-					);
-					return wrapFunction(fileName, f, name);
-				} else return node;
-			} else if (ts.isFunctionExpression(node)) {
-				// match `foo = function(props) {...};`
-				if (isReactFunction(node)) {
-					const name = getName(node) || (ts.isVariableDeclaration(node.parent) && getName(node.parent));
-					return wrapFunction(fileName, node, name);
-				} else return node;
-			} else if (ts.isFunctionDeclaration(node)) {
-				// match `function foo(props) {...}`
-				if (isReactFunction(node)) {
-					const name = getName(node);
-					// convert to `foo = function foo(props)` expression
-					const f = ts.createFunctionExpression(
-						undefined,
-						undefined,
-						name,
-						undefined,
-						node.parameters,
-						node.type,
-						node.body
-					);
-					const modifiers = node.modifiers;
-					const isDefault = removeDefault(modifiers);
-					if (isDefault) addDefaults.push(name);
-					return ts.createVariableStatement(
-						modifiers,
-						ts.createVariableDeclarationList([
-							ts.createVariableDeclaration(name, undefined, wrapFunction(fileName, f, name))
-						])
-					);
-				} else return node;
-			} else if (ts.isClassDeclaration(node)) {
-				// match `class X extends Component`
-				if (isReactClass(node)) {
-					const name = getName(node);
-					// convert to `X = class X extends Component`
-					const modifiers = node.modifiers;
-					const isDefault = removeDefault(modifiers);
-					if (isDefault) addDefaults.push(name);
-					const c = ts.createClassExpression(modifiers, name, node.typeParameters, node.heritageClauses, node.members);
-					return ts.createVariableStatement(
-						modifiers,
-						ts.createVariableDeclarationList([
-							ts.createVariableDeclaration(name, undefined, wrapClass(fileName, c, name))
-						])
-					);
-				}
-				return node;
-			} else if (ts.isClassExpression(node)) {
-				// match `X = class extends React.Component`
-				if (isReactClass(node)) {
-					const name = getName(node) || (ts.isVariableDeclaration(node.parent) && getName(node.parent));
-					return wrapClass(fileName, node, name);
-				}
-			} else if (ts.isVariableStatement(node) || ts.isVariableDeclaration(node) || ts.isVariableDeclarationList(node)) {
-				// recurse-visit top-level variables declarations
-				return ts.visitEachChild(node, visitor, context);
+function prodTransformer(context: ts.TransformationContext) {
+	const visitor = (node: ts.Node) => {
+		// visit files
+		if (ts.isSourceFile(node)) {
+			const imports: ({ text: string })[] = (node as any).imports;
+			// replace `react-hmr-ts` imports by a cold version for production
+			if (imports && imports.find(imp => imp.text === 'react-hmr-ts')) {
+				const statements = node.statements.map(s => {
+					if (ts.isImportDeclaration(s)
+						&& ts.isStringLiteral(s.moduleSpecifier)
+						&& s.moduleSpecifier.text === 'react-hmr-ts'
+					) {
+						return ts.updateImportDeclaration(s,
+							s.decorators, s.modifiers, s.importClause,
+							ts.createStringLiteral('react-hmr-ts/cold.js'));
+					} else return s;
+				});
+				return ts.updateSourceFileNode(node, statements);
 			}
-			// otherwise skip
-			return node;
-		};
-		return (node: ts.Node) => ts.visitNode(node, visitor);
+		}
+		return node;
 	};
+	return (node: ts.Node) => ts.visitNode(node, visitor);
+}
+
+function devTransformer(context: ts.TransformationContext) {
+	let fileName: string;
+	let addDefaults: string[];
+	let makeHot: boolean;
+
+	const visitor = (node: ts.Node) => {
+		// visit files
+		if (ts.isSourceFile(node)) {
+			if (skipSourceFile(node)) return node;
+			// visit children
+			fileName = node.fileName;
+			addDefaults = [];
+			const visitedSource: ts.SourceFile = ts.visitEachChild(node, visitor, context);
+			// generate extra code
+			const statements = [
+				...hotStatements(makeHot),
+				...visitedSource.statements,
+				...addDefaults.map(name => {
+					return ts.createExportDefault(ts.createIdentifier(name));
+				})
+			];
+			const newSource = ts.updateSourceFileNode(visitedSource, statements);
+			// const printer = ts.createPrinter();
+			// console.log(printer.printFile(newSource));
+			return newSource;
+		} else if (ts.isArrowFunction(node)) {
+			// match `foo = (props) => ...;`
+			if (isReactFunction(node)) {
+				makeHot = true;
+				const name = getName(node) || (ts.isVariableDeclaration(node.parent) && getName(node.parent));
+				// convert to `foo = function foo(props)` expression
+				const f = ts.createFunctionExpression(
+					undefined,
+					undefined,
+					name,
+					undefined,
+					node.parameters,
+					node.type,
+					ts.isBlock(node.body) ? node.body : ts.createBlock([ts.createReturn(node.body)])
+				);
+				return wrapFunction(fileName, f, name);
+			} else return node;
+		} else if (ts.isFunctionExpression(node)) {
+			// match `foo = function(props) {...};`
+			if (isReactFunction(node)) {
+				makeHot = true;
+				const name = getName(node) || (ts.isVariableDeclaration(node.parent) && getName(node.parent));
+				return wrapFunction(fileName, node, name);
+			} else return node;
+		} else if (ts.isFunctionDeclaration(node)) {
+			// match `function foo(props) {...}`
+			if (isReactFunction(node)) {
+				makeHot = true;
+				const name = getName(node);
+				// convert to `foo = function foo(props)` expression
+				const f = ts.createFunctionExpression(
+					undefined,
+					undefined,
+					name,
+					undefined,
+					node.parameters,
+					node.type,
+					node.body
+				);
+				const modifiers = node.modifiers;
+				const isDefault = removeDefault(modifiers);
+				if (isDefault) addDefaults.push(name);
+				return ts.createVariableStatement(
+					modifiers,
+					ts.createVariableDeclarationList([
+						ts.createVariableDeclaration(name, undefined, wrapFunction(fileName, f, name))
+					])
+				);
+			} else return node;
+		} else if (ts.isClassDeclaration(node)) {
+			// match `class X extends Component`
+			if (isReactClass(node)) {
+				makeHot = true;
+				const name = getName(node);
+				// convert to `X = class X extends Component`
+				const modifiers = node.modifiers;
+				const isDefault = removeDefault(modifiers);
+				if (isDefault) addDefaults.push(name);
+				const c = ts.createClassExpression(modifiers, name, node.typeParameters, node.heritageClauses, node.members);
+				return ts.createVariableStatement(
+					modifiers,
+					ts.createVariableDeclarationList([
+						ts.createVariableDeclaration(name, undefined, wrapClass(fileName, c, name))
+					])
+				);
+			}
+			return node;
+		} else if (ts.isClassExpression(node)) {
+			// match `X = class extends React.Component`
+			if (isReactClass(node)) {
+				makeHot = true;
+				const name = getName(node) || (ts.isVariableDeclaration(node.parent) && getName(node.parent));
+				return wrapClass(fileName, node, name);
+			}
+		} else if (ts.isVariableStatement(node) || ts.isVariableDeclaration(node) || ts.isVariableDeclarationList(node)) {
+			// recurse-visit top-level variables declarations
+			return ts.visitEachChild(node, visitor, context);
+		}
+		// otherwise skip
+		return node;
+	};
+	return (node: ts.Node) => ts.visitNode(node, visitor);
 }
 
 /**
@@ -200,17 +235,9 @@ function isReactFunction(node: ts.FunctionDeclaration | ts.FunctionExpression | 
 }
 
 function isReactClass(node: ts.ClassExpression | ts.ClassDeclaration) {
-	// lookup `extends` type and compare with expected React components base classes
-	if (!node.heritageClauses) return false;
-	let isReactClass = false;
-	node.heritageClauses.forEach(clause => {
-		clause.types &&
-			clause.types.forEach(type => {
-				const extName = getQualifiedName(type.expression);
-				if (reactBaseClasses.includes(extName)) isReactClass = true;
-			});
-	});
-	return isReactClass;
+	// assume a class with a base class and a `render` function are React classes (in `.tsx` files)
+	return (node.heritageClauses && node.heritageClauses.length > 0
+		&& node.members.find(member => getName(member) === 'render'));
 }
 
 /**
@@ -248,33 +275,41 @@ function wrapFunction(fileName: string, expression: ts.Expression, name: string)
 	]);
 }
 
-function declareWrappers() {
-	// (type, name, source, decl)
-	const params = [
-		ts.createParameter(undefined, undefined, undefined, 'type'),
-		ts.createParameter(undefined, undefined, undefined, 'name'),
-		ts.createParameter(undefined, undefined, undefined, 'source'),
-		ts.createParameter(undefined, undefined, undefined, 'decl')
-	];
-	// { return require('hmr-ts-transformer')(type, name, source, decl); }
-	const body = ts.createBlock([
-		ts.createReturn(
-			ts.createCall(
-				ts.createCall(ts.createIdentifier('require'), undefined, [ts.createStringLiteral(proxyModule)]),
-				undefined,
-				[
-					ts.createIdentifier('type'),
-					ts.createIdentifier('name'),
-					ts.createIdentifier('source'),
-					ts.createIdentifier('decl')
-				]
-			)
-		)
-	]);
-	// function _hmr_proxy_(params) { body }
-	return [
-		ts.createFunctionDeclaration(undefined, undefined, undefined, proxyWrapper, undefined, params, undefined, body)
-	];
+function hotStatements(makeHot: boolean): ts.Statement[] {
+	return makeHot ? reify(`
+		function ${proxyWrapper}(type, name, source, decl) {
+			return require('${proxyModule}')(type, name, source, decl);
+		}
+		if (module.hot) module.hot.accept();
+	`) : [];
+}
+
+/* REIFICATION: AST from source */
+
+const reified: { [source: string]: ts.Statement[] } = {};
+
+function reify(source: string, noCache?: boolean): ts.Statement[] {
+	if (!noCache && reified[source]) {
+		return reified[source];
+	}
+	const sourceFile: ts.SourceFile = ts.createSourceFile(
+		'template.ts', source, ts.ScriptTarget.ES2015, true, ts.ScriptKind.TS
+	);
+	const result = Array.prototype.filter.call(sourceFile.statements, s => !ts.isEmptyStatement(s));
+    anonymize(result);
+	if (!noCache) reified[source] = result;
+	return result;
+}
+
+// Remove position information from nodes, otherwise broken code is generated
+function anonymize(o: any) {
+    if (o.kind) o.pos = o.end = -1;
+    for (let p in o) {
+        if (p === 'parent' || !o.hasOwnProperty(p)) continue;
+        const v = o[p];
+        const t = typeof v;
+        if (t === 'object') anonymize(v);
+    }
 }
 
 export = hmrTransformer;

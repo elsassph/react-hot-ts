@@ -1,6 +1,6 @@
 {
   "name": "react-hmr-ts",
-  "version": "0.2.0",
+  "version": "0.3.1",
   "description": "React HMR support for Typescript as AST transformer",
   "scripts": {
     "build": "tsc lib/transformer.ts -d",
@@ -11,9 +11,15 @@
     "lib/transformer.js",
     "lib/transformer.d.ts",
     "index.js",
-    "index.d.ts"
+    "index.d.ts",
+    "cold.js"
   ],
-  "keywords": ["typescript", "hmr", "react", "webpack"],
+  "keywords": [
+    "typescript",
+    "hmr",
+    "react",
+    "webpack"
+  ],
   "author": "Philippe Elsass",
   "license": "ISC",
   "dependencies": {

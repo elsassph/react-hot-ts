@@ -14,5 +14,6 @@ declare type HMRTransformerOptions = {
  * TypeScript AST transformer
  * Wraps React classes and functional components for HMR
  */
-declare function hmrTransformer(options: HMRTransformerOptions): (() => (node: any) => any) | ((context: ts.TransformationContext) => (node: ts.Node) => ts.Node);
+declare function hmrTransformer(options: HMRTransformerOptions): typeof prodTransformer;
+declare function prodTransformer(context: ts.TransformationContext): (node: ts.Node) => ts.Node;
 export = hmrTransformer;

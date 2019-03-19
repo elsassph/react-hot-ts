@@ -25,3 +25,5 @@ const test6 = (props) => {
 export function test7() {
     return <div/>;
 }
+
+declare function test8(props): void;

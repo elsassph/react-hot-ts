@@ -5,6 +5,10 @@
         "types": ["node"],
         "lib": ["esnext"],
         "sourceMap": true,
-        "jsx": "react"
+        "jsx": "react",
+        "baseUrl": "./",
+        "paths": {
+            "react-hmr-ts": ["./index.js"]
+        }
     }
 }

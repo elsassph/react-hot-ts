@@ -1,11 +1,14 @@
 const { exec } = require('child_process');
+const printDiff = require('print-diff');
 
 const EXPECT = `
++  1 test1 {{DIR}}/src/functions.tsx function test1
 +  1 test2 {{DIR}}/src/functions.tsx function test2
 +  1 test3 {{DIR}}/src/functions.tsx function test3
 +  1 test4 {{DIR}}/src/functions.tsx function test4
 +  1 notTest5 {{DIR}}/src/functions.tsx function notTest5
 +  1 test6 {{DIR}}/src/functions.tsx function test6
++  1 test7 {{DIR}}/src/functions.tsx function test7
 +  0 Comp1 {{DIR}}/src/classes.tsx function class_1
 +  0 Comp2 {{DIR}}/src/classes.tsx function Comp2
 +  0 Comp3 {{DIR}}/src/classes.tsx function Comp3
@@ -17,19 +20,16 @@ const EXPECT = `
 - export_class
 `;
 
-console.log(__dirname);
-
 exec('node test/dist/test.js', (error, stdout, stderr) => {
     if (error) {
         console.error(stdout);
         process.exit(1);
     }
-    const expect = EXPECT.replace(/{{DIR}}/g, __dirname);
-    if (strip(expect) === strip(stdout)) console.log('PASS');
+    const expected = strip(EXPECT.replace(/{{DIR}}/g, __dirname));
+    const outcome = strip(stdout);
+    if (expected === outcome) console.log('PASS');
     else {
-        console.error('--------------------');
-        console.error(stdout.trim());
-        console.error('--------------------');
+        printDiff(expected, outcome);
         console.error('FAIL');
         process.exit(2);
     }

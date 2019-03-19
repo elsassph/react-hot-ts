@@ -29,6 +29,7 @@
     "@types/chai": "^4.1.7",
     "@types/node": "^11.11.3",
     "chai": "^4.2.0",
+    "print-diff": "^0.1.1",
     "ts-loader": "^5.3.3",
     "typescript": "^3.3.3333",
     "webpack": "^4.29.6",

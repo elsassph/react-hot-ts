@@ -23,7 +23,10 @@ module.exports = {
                 }
             }
         ]
-    }
+    },
+    plugins: [
+        new webpack.HotModuleReplacementPlugin()
+    ]
 };
 
 function getCustomTransformers() {

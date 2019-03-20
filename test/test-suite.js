@@ -2,19 +2,20 @@ const { exec } = require('child_process');
 const printDiff = require('print-diff');
 
 const EXPECT = `
-+  1 test1 {{DIR}}/src/functions.tsx function test1
-+  1 test2 {{DIR}}/src/functions.tsx function test2
-+  1 test3 {{DIR}}/src/functions.tsx function test3
-+  1 test4 {{DIR}}/src/functions.tsx function test4
-+  1 notTest5 {{DIR}}/src/functions.tsx function notTest5
-+  1 test6 {{DIR}}/src/functions.tsx function test6
-+  1 test7 {{DIR}}/src/functions.tsx function test7
-+  0 Comp1 {{DIR}}/src/classes.tsx function class_1
-+  0 Comp2 {{DIR}}/src/classes.tsx function Comp2
-+  0 Comp3 {{DIR}}/src/classes.tsx function Comp3
-+  0 NotComp4 {{DIR}}/src/classes.tsx function NotComp4
++ test1 {{DIR}}/src/functions.tsx function test1
++ test2 {{DIR}}/src/functions.tsx function test2
++ test3 {{DIR}}/src/functions.tsx function test3
++ test8 {{DIR}}/src/functions.tsx function test8
++ test5 {{DIR}}/src/functions.tsx function notTest5
++ test6 {{DIR}}/src/functions.tsx function
++ test7 {{DIR}}/src/functions.tsx function
++ test4 {{DIR}}/src/functions.tsx function test4
++ Test1 {{DIR}}/src/classes.tsx function class_1
++ Test2 {{DIR}}/src/classes.tsx function Test2
++ Test4 {{DIR}}/src/classes.tsx function NotTest4
 - default_export_function_with_props
 - export_function_with_props
+- export_multiple_arrow_functions
 - export_function_without_props
 - export_default_class
 - export_class

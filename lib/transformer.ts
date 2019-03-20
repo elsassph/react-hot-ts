@@ -19,20 +19,11 @@ type HMRTransformerOptions = {
  * Wraps React classes and functional components for HMR
  */
 function hmrTransformer(options: HMRTransformerOptions): (context: ts.TransformationContext) => ts.Visitor {
-	// do nothing if not `development`
-	const env = process.env.NODE_ENV;
-	if (env !== 'development') {
-		if (env === undefined) {
-			console.error('[react-hmr-ts] ERROR!');
-			console.error('[react-hmr-ts] `process.env.NODE_ENV` is `undefined`');
-			console.error('[react-hmr-ts] Ensure `process.env.NODE_ENV` is set to "development" for operation');
-		} else {
-			console.log('[react-hmr-ts] disabled for', env);
-		}
+	applyOptions(options);
+	if (process.env.NODE_ENV === 'production') {
+		console.log('[react-hmr-ts] disabled for production');
 		return prodTransformer;
 	}
-
-	applyOptions(options);
 	return devTransformer;
 }
 

@@ -81,16 +81,12 @@ Example: `hmrTransformer({ keepArrows: true })`
 
 ### Attention NODE_ENV
 
-You must set the `NODE_ENV` environement (e.g. `process.env.NODE_ENV`) to `"development"` otherwise the transform won't be operational.
-
-Note: Webpack's `mode` is [not sufficient](https://github.com/webpack/webpack/issues/7074).
-
-If your `NODE_ENV` isn't correctly set you will see this message in the console:
+You must set the `NODE_ENV` environment (e.g. `process.env.NODE_ENV`) to `"production"` to disable the transform.
+You will see this message in the console:
 ```
-[react-hmr-ts] ERROR!
-[react-hmr-ts] `process.env.NODE_ENV` is `undefined`
-[react-hmr-ts] Ensure `process.env.NODE_ENV` is set to "development" for operation
+[react-hmr-ts] disabled for production
 ```
+*Note: Webpack's `mode` is [not sufficient](https://github.com/webpack/webpack/issues/7074).*
 
 ## React usage
 

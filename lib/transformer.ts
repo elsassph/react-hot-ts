@@ -2,13 +2,16 @@ import * as ts from 'typescript';
 
 const PROXY_MODULE = 'react-hmr-ts';
 let proxyModule: string;
+let keepArrows: boolean;
 
 /**
  * HMR transformer options:
  * - proxyModule: module required by the client HMR proxy
+ * - keepArrows: leave arrow functions not re-wired to prototype
  */
 type HMRTransformerOptions = {
 	proxyModule?: string;
+	keepArrows?: boolean;
 }
 
 /**
@@ -16,20 +19,11 @@ type HMRTransformerOptions = {
  * Wraps React classes and functional components for HMR
  */
 function hmrTransformer(options: HMRTransformerOptions): (context: ts.TransformationContext) => ts.Visitor {
-	// do nothing if not `development`
-	const env = process.env.NODE_ENV;
-	if (env !== 'development') {
-		if (env === undefined) {
-			console.error('[react-hmr-ts] ERROR!');
-			console.error('[react-hmr-ts] `process.env.NODE_ENV` is `undefined`');
-			console.error('[react-hmr-ts] Ensure `process.env.NODE_ENV` is set to "development" for operation');
-		} else {
-			console.log('[react-hmr-ts] disabled for', env);
-		}
+	applyOptions(options);
+	if (process.env.NODE_ENV === 'production') {
+		console.log('[react-hmr-ts] disabled for production');
 		return prodTransformer;
 	}
-
-	applyOptions(options);
 	return devTransformer;
 }
 
@@ -70,7 +64,7 @@ function devTransformer(context: ts.TransformationContext) {
 		if (isSourceFileObject(node) && !shouldSkipSourceFile(node)) {
 			// add exports registration
 			const statements: ts.Statement[] = [
-				...node.statements,
+				...visitStatements(node.statements),
 				ts.createEmptyStatement(),
 				ts.createStatement(ts.createImmediatelyInvokedFunctionExpression([
 					...createHotStatements(node.fileName),
@@ -91,9 +85,72 @@ function applyOptions(options: HMRTransformerOptions) {
 	proxyModule = PROXY_MODULE;
 	if (!options) return;
 
-	if (options.proxyModule) {
+	if (typeof options.proxyModule === 'string') {
 		proxyModule = options.proxyModule;
 	}
+	if (options.keepArrows !== undefined) {
+		keepArrows = options.keepArrows;
+	}
+}
+
+function visitStatements(statements: ts.NodeArray<ts.Statement>) {
+	if (keepArrows) return statements;
+
+	return Array.prototype.map.call(statements, statement => {
+		if (ts.isClassDeclaration(statement) && hasArrowFunctions(statement)) {
+			const members = transformArrows(statement.members);
+			return ts.updateClassDeclaration(
+				statement, statement.decorators, statement.modifiers,
+				ts.createIdentifier(statement.name.text), statement.typeParameters,
+				statement.heritageClauses, members);
+		}
+		return statement;
+	});
+}
+
+// transform arrow-function members into prototype-backed functions
+function transformArrows(members: ts.NodeArray<ts.ClassElement>) {
+	const extraMembers = [];
+	const newMembers = members.map(member => {
+		if (ts.isPropertyDeclaration(member) && member.initializer && ts.isArrowFunction(member.initializer)) {
+			const fun = member.initializer;
+			const body = getBody(fun);
+			if (!body) return member;
+			const name = getValueName(member);
+			const protoName = '_hmr_' + name;
+			// create new prototype method with arrow function body
+			extraMembers.push(ts.createMethod(
+				undefined, [ts.createModifier(ts.SyntaxKind.PrivateKeyword)], undefined,
+				protoName, undefined, undefined,
+				fun.parameters, fun.type, body));
+			// replace arrow function body to invoke new method
+			const wrapperBody = ts.createCall(
+				createFieldApplyExpression(protoName), undefined,
+				[ts.createThis(), ts.createIdentifier('args')]
+			);
+			const wrapper = ts.createArrowFunction(undefined, undefined,
+					[createDotArgs()], fun.type, undefined, wrapperBody)
+			return ts.updateProperty(
+				member, member.decorators, member.modifiers,
+				getValueName(member), undefined, undefined, wrapper);
+		}
+		return member;
+	});
+	return [...newMembers, ...extraMembers];
+}
+
+function createDotArgs(): any {
+	// `...args`
+	return ts.createParameter(undefined, undefined, ts.createToken(ts.SyntaxKind.DotDotDotToken), 'args');
+}
+
+function createFieldApplyExpression(name: string) {
+	// `this.field.apply`
+	return ts.createPropertyAccess(ts.createPropertyAccess(ts.createThis(), name), 'apply');
+}
+
+function hasArrowFunctions(decl: ts.ClassLikeDeclaration) {
+	return decl.members.find(member => member.kind === ts.SyntaxKind.PropertyDeclaration);
 }
 
 function shouldSkipSourceFile(node: SourceFileObject) {
@@ -134,6 +191,15 @@ function createRegistrations(exports: Map<string, SymbolObject>): ts.Statement[]
 		);
 	});
 	return statements;
+}
+
+function getBody(node: ts.FunctionLike) {
+	if (ts.isArrowFunction(node)) {
+		return ts.isBlock(node.body) ? node.body : ts.createBlock([ts.createReturn(node.body)]);
+	} else if (ts.isFunctionDeclaration(node)) {
+		return node.body;
+	}
+	return undefined;
 }
 
 function getValueName(node: ts.NamedDeclaration) {

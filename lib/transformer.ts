@@ -134,10 +134,11 @@ function transformArrows(members: ts.NodeArray<ts.ClassElement>) {
 				fun.parameters, fun.type, body));
 			// replace arrow function body to invoke new method
 			const wrapperBody = ts.createCall(
-				ts.createPropertyAccess(ts.createThis(), protoName), undefined,
-				createArguments(fun.parameters)
+				createFieldApplyExpression(protoName), undefined,
+				[ts.createThis(), ts.createIdentifier('args')]
 			);
-			const wrapper = ts.createArrowFunction(undefined, undefined, fun.parameters, fun.type, undefined, wrapperBody)
+			const wrapper = ts.createArrowFunction(undefined, undefined,
+					[createDotArgs()], fun.type, undefined, wrapperBody)
 			return ts.updateProperty(
 				member, member.decorators, member.modifiers,
 				getValueName(member), undefined, undefined, wrapper);
@@ -147,8 +148,14 @@ function transformArrows(members: ts.NodeArray<ts.ClassElement>) {
 	return [...newMembers, ...extraMembers];
 }
 
-function createArguments(params: ts.NodeArray<ts.ParameterDeclaration>) {
-	return Array.prototype.map.call(params, param => ts.createIdentifier(getValueName(param)));
+function createDotArgs(): any {
+	// `...args`
+	return ts.createParameter(undefined, undefined, ts.createToken(ts.SyntaxKind.DotDotDotToken), 'args');
+}
+
+function createFieldApplyExpression(name: string) {
+	// `this.field.apply`
+	return ts.createPropertyAccess(ts.createPropertyAccess(ts.createThis(), name), 'apply');
 }
 
 function hasArrowFunctions(decl: ts.ClassLikeDeclaration) {

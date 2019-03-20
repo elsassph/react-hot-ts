@@ -1,6 +1,8 @@
 const { exec } = require('child_process');
 const printDiff = require('print-diff');
 
+const ANON_CLASS = process.argv.length > 1 && process.argv[2] == 'es6' ? 'Component' : 'class_1';
+
 const EXPECT = `
 + test1 {{DIR}}/src/functions.tsx function test1
 + test2 {{DIR}}/src/functions.tsx function test2
@@ -10,7 +12,7 @@ const EXPECT = `
 + test6 {{DIR}}/src/functions.tsx function
 + test7 {{DIR}}/src/functions.tsx function
 + test4 {{DIR}}/src/functions.tsx function test4
-+ Test1 {{DIR}}/src/classes.tsx function class_1
++ Test1 {{DIR}}/src/classes.tsx function ${ANON_CLASS}
 + Test2 {{DIR}}/src/classes.tsx function Test2
 + Test4 {{DIR}}/src/classes.tsx function NotTest4
 - default_export_function_with_props

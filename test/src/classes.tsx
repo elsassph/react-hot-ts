@@ -10,8 +10,8 @@ export const Test1 = class extends Component {
 }
 
 export default class Test2 extends React.Component {
-    on1 = () => {
-        return 'on1';
+    on1 = (...args) => {
+        return args;
     };
     on2 = (a, b, c) => [a, b, c];
     on3 = function() {};

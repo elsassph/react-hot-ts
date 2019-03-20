@@ -6,14 +6,20 @@ Add React Hot Module Replacement in your TypeScript / Webpack projects!:
 
 - Compile-time transformation is done using a TypeScript compiler hook,
 - Supports both React component classes and functional components,
-- [Webpack][1] + [ts-loader][2] ready, but can support other bundlers and loaders with sufficient HMR / transformer APIs,
-- Reliable HMR feature based on Dan Abramov's [react-proxy][3],
-- **Bonus:** ensures React functions and classes have a `displayName`, for enhanced debugging experience!
+- [Webpack][2] + [ts-loader][3] ready, but can support other bundlers and loaders with sufficient HMR / transformer APIs,
+- Reliable HMR feature based on Dan Abramov's [react-proxy][4] (note: you should alias it to [react-stand-in][5] when targeting ES6),
+- Support both ES5 and ES6 compilation targets.
+
+**Bonus:**
+
+- rewrites arrow functions to be hot-reload friendly (can be opt-out),
+- ensures React functions and classes have a "display name", for enhanced debugging experience.
 
 [1]: https://github.com/gaearon/react-hot-loader
 [2]: https://webpack.js.org
 [3]: https://github.com/TypeStrong/ts-loader
 [4]: https://github.com/gaearon/react-proxy
+[5]: https://github.com/theKashey/react-stand-in
 
 ## Installation
 
@@ -59,6 +65,19 @@ module.exports = {
     /*...*/
 }
 ```
+
+### Transformer options
+
+Although they shouldn't be needed for normal use cases, the transformers has a few options:
+
+Usage: `hmrTransformer(options)`
+
+Where `options` is an object with the following optional fields:
+
+- `keepArrows`: opt-out of arrow functions rewriting; this can avoid a lot of extra code (and maybe subtle issues) when targeting ES5 instead of ES6,
+- `proxyModule`: (advanced) specify an alternative module to be required by the client HMR proxy logic.
+
+Example: `hmrTransformer({ keepArrows: true })`
 
 ### Attention NODE_ENV
 

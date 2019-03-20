@@ -2,13 +2,16 @@ import * as ts from 'typescript';
 
 const PROXY_MODULE = 'react-hmr-ts';
 let proxyModule: string;
+let keepArrows: boolean;
 
 /**
  * HMR transformer options:
  * - proxyModule: module required by the client HMR proxy
+ * - keepArrows: leave arrow functions not re-wired to prototype
  */
 type HMRTransformerOptions = {
 	proxyModule?: string;
+	keepArrows?: boolean;
 }
 
 /**
@@ -70,7 +73,7 @@ function devTransformer(context: ts.TransformationContext) {
 		if (isSourceFileObject(node) && !shouldSkipSourceFile(node)) {
 			// add exports registration
 			const statements: ts.Statement[] = [
-				...node.statements,
+				...visitStatements(node.statements),
 				ts.createEmptyStatement(),
 				ts.createStatement(ts.createImmediatelyInvokedFunctionExpression([
 					...createHotStatements(node.fileName),
@@ -91,9 +94,65 @@ function applyOptions(options: HMRTransformerOptions) {
 	proxyModule = PROXY_MODULE;
 	if (!options) return;
 
-	if (options.proxyModule) {
+	if (typeof options.proxyModule === 'string') {
 		proxyModule = options.proxyModule;
 	}
+	if (options.keepArrows !== undefined) {
+		keepArrows = options.keepArrows;
+	}
+}
+
+function visitStatements(statements: ts.NodeArray<ts.Statement>) {
+	if (keepArrows) return statements;
+
+	return Array.prototype.map.call(statements, statement => {
+		if (ts.isClassDeclaration(statement) && hasArrowFunctions(statement)) {
+			const members = transformArrows(statement.members);
+			return ts.updateClassDeclaration(
+				statement, statement.decorators, statement.modifiers,
+				ts.createIdentifier(statement.name.text), statement.typeParameters,
+				statement.heritageClauses, members);
+		}
+		return statement;
+	});
+}
+
+// transform arrow-function members into prototype-backed functions
+function transformArrows(members: ts.NodeArray<ts.ClassElement>) {
+	const extraMembers = [];
+	const newMembers = members.map(member => {
+		if (ts.isPropertyDeclaration(member) && member.initializer && ts.isArrowFunction(member.initializer)) {
+			const fun = member.initializer;
+			const body = getBody(fun);
+			if (!body) return member;
+			const name = getValueName(member);
+			const protoName = '_hmr_' + name;
+			// create new prototype method with arrow function body
+			extraMembers.push(ts.createMethod(
+				undefined, [ts.createModifier(ts.SyntaxKind.PrivateKeyword)], undefined,
+				protoName, undefined, undefined,
+				fun.parameters, fun.type, body));
+			// replace arrow function body to invoke new method
+			const wrapperBody = ts.createCall(
+				ts.createPropertyAccess(ts.createThis(), protoName), undefined,
+				createArguments(fun.parameters)
+			);
+			const wrapper = ts.createArrowFunction(undefined, undefined, fun.parameters, fun.type, undefined, wrapperBody)
+			return ts.updateProperty(
+				member, member.decorators, member.modifiers,
+				getValueName(member), undefined, undefined, wrapper);
+		}
+		return member;
+	});
+	return [...newMembers, ...extraMembers];
+}
+
+function createArguments(params: ts.NodeArray<ts.ParameterDeclaration>) {
+	return Array.prototype.map.call(params, param => ts.createIdentifier(getValueName(param)));
+}
+
+function hasArrowFunctions(decl: ts.ClassLikeDeclaration) {
+	return decl.members.find(member => member.kind === ts.SyntaxKind.PropertyDeclaration);
 }
 
 function shouldSkipSourceFile(node: SourceFileObject) {
@@ -134,6 +193,15 @@ function createRegistrations(exports: Map<string, SymbolObject>): ts.Statement[]
 		);
 	});
 	return statements;
+}
+
+function getBody(node: ts.FunctionLike) {
+	if (ts.isArrowFunction(node)) {
+		return ts.isBlock(node.body) ? node.body : ts.createBlock([ts.createReturn(node.body)]);
+	} else if (ts.isFunctionDeclaration(node)) {
+		return node.body;
+	}
+	return undefined;
 }
 
 function getValueName(node: ts.NamedDeclaration) {

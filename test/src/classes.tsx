@@ -10,6 +10,11 @@ export const Test1 = class extends Component {
 }
 
 export default class Test2 extends React.Component {
+    on1 = () => {
+        return 'on1';
+    };
+    on2 = (a, b, c) => [a, b, c];
+    on3 = function() {};
     render() {
         return 2;
     }
@@ -25,4 +30,7 @@ export const Test4 = class NotTest4 extends Component {
     render() {
         return 4;
     }
+}
+
+class Test5 {
 }

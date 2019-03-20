@@ -18,6 +18,7 @@ const EXPECT = `
 - export_multiple_arrow_functions
 - export_function_without_props
 - export_default_class
+- export_arrow_function_forward
 - export_class
 `;
 

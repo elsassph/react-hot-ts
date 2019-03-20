@@ -33,7 +33,9 @@ function register(type, name, source) {
 	if (typeof type !== 'function') return;
 
 	// ensure display name
-	if (!type.name && !type.displayName) type.displayName = name;
+	if (!type.name && !type.displayName && name !== 'default') {
+		type.displayName = name;
+	}
 
 	// tag type
 	const key = name + '@' + source;

@@ -19,6 +19,10 @@ const cases = [
     function export_default_class() {
         assert.equal(new Test2().render(), 2);
     },
+    function export_arrow_function_forward() {
+        assert.equal(new Test2().on1(), 'on1');
+        assert.deepEqual(new Test2().on2(1, 2, 3), [1, 2, 3]);
+    },
     function export_class() {
         assert.equal(new Test1().render(), 1);
     }
@@ -26,4 +30,10 @@ const cases = [
 
 cases.forEach(test => {
     console.log('-', test.name);
+    try {
+        test();
+    } catch (err) {
+        console.log('FAIL:', err.message);
+        process.exit(1);
+    }
 });

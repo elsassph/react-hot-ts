@@ -1,30 +1,21 @@
 import * as ts from 'typescript';
 
 const PROXY_MODULE = 'react-hmr-ts';
-const PROXY_WRAPPER = '_hmr_proxy_';
-const REACT_BASE_CLASSES = ['Component', 'React.Component', 'React.PureComponent'];
-
 let proxyModule: string;
-let proxyWrapper: string;
-let reactBaseClasses: string[];
 
 /**
  * HMR transformer options:
  * - proxyModule: module required by the client HMR proxy
- * - proxyWrapper: generated HMR wrapper function name
- * - reactBaseClasses: list of base class names considered for React components
  */
 type HMRTransformerOptions = {
 	proxyModule?: string;
-	proxyWrapper?: string;
-	reactBaseClasses?: string[];
 }
 
 /**
  * TypeScript AST transformer
  * Wraps React classes and functional components for HMR
  */
-function hmrTransformer(options: HMRTransformerOptions) {
+function hmrTransformer(options: HMRTransformerOptions): (context: ts.TransformationContext) => ts.Visitor {
 	// do nothing if not `development`
 	const env = process.env.NODE_ENV;
 	if (env !== 'development') {
@@ -42,9 +33,11 @@ function hmrTransformer(options: HMRTransformerOptions) {
 	return devTransformer;
 }
 
+/**
+ * Production transformer replaces the HMR logic with a no-op
+ */
 function prodTransformer(context: ts.TransformationContext) {
 	const visitor = (node: ts.Node) => {
-		// visit files
 		if (ts.isSourceFile(node)) {
 			const imports: ({ text: string })[] = (node as any).imports;
 			// replace `react-hmr-ts` imports by a cold version for production
@@ -67,118 +60,28 @@ function prodTransformer(context: ts.TransformationContext) {
 	return (node: ts.Node) => ts.visitNode(node, visitor);
 }
 
+/**
+ * Development transformer registers all the module exports (of TSX files)
+ * so that they can be proxied and updated live if they happen
+ * to be React components/functions
+ */
 function devTransformer(context: ts.TransformationContext) {
-	let fileName: string;
-	let addDefaults: string[];
-	let makeHot: boolean;
-
 	const visitor = (node: ts.Node) => {
-		if (ts.isSourceFile(node)) {
-			if (skipSourceFile(node)) return node;
-			// we'll visit children
-			fileName = node.fileName;
-			addDefaults = [];
-			const visitedSource: ts.SourceFile = ts.visitEachChild(node, visitor, context);
-			// generate extra code
-			const statements = [
-				...hotStatements(makeHot),
-				...visitedSource.statements,
-				...addDefaults.map(name => {
-					return ts.createExportDefault(ts.createIdentifier(name));
-				})
+		if (isSourceFileObject(node) && !shouldSkipSourceFile(node)) {
+			// add exports registration
+			const statements: ts.Statement[] = [
+				...node.statements,
+				ts.createEmptyStatement(),
+				ts.createStatement(ts.createImmediatelyInvokedFunctionExpression([
+					...createHotStatements(node.fileName),
+					...createRegistrations(node.symbol.exports)
+				]))
 			];
-			const newSource = ts.updateSourceFileNode(visitedSource, statements);
-			// const printer = ts.createPrinter();
-			// console.log(printer.printFile(newSource));
-			return newSource;
-		} else if (ts.isArrowFunction(node)) {
-			if (isReactFunction(node)) {
-				makeHot = true;
-				return wrapArrowFunction(node, fileName);
-			} else return node;
-		} else if (ts.isFunctionExpression(node)) {
-			if (isReactFunction(node)) {
-				makeHot = true;
-				return wrapFunctionExpression(node, fileName);
-			} else return node;
-		} else if (ts.isFunctionDeclaration(node)) {
-			if (isReactFunction(node)) {
-				makeHot = true;
-				return wrapFunctionDeclaration(node, fileName, addDefaults);
-			} else return node;
-		} else if (ts.isClassExpression(node)) {
-			if (isReactClass(node)) {
-				makeHot = true;
-				return wrapClassExpression(node, fileName);
-			}
-		} else if (ts.isClassDeclaration(node)) {
-			if (isReactClass(node)) {
-				makeHot = true;
-				return wrapClassDeclaration(node, fileName, addDefaults);
-			}
-			return node;
-		} else if (ts.isVariableStatement(node) || ts.isVariableDeclarationList(node) || ts.isVariableDeclaration(node)) {
-			// recurse-visit top-level variables declarations
-			return ts.visitEachChild(node, visitor, context);
+			return ts.updateSourceFileNode(node, statements);
 		}
 		return node;
 	};
 	return (node: ts.Node) => ts.visitNode(node, visitor);
-}
-
-// match `class X extends Component`
-function wrapClassDeclaration(node: ts.ClassDeclaration, fileName: string, addDefaults: string[]) {
-	const name = getName(node);
-	// remove `export default` modifier into a separate const statement
-	const modifiers = node.modifiers;
-	const isDefault = removeDefault(modifiers);
-	if (isDefault) addDefaults.push(name);
-	// convert to `X = class X extends Component`
-	const c = ts.createClassExpression(modifiers, name, node.typeParameters, node.heritageClauses, node.members);
-	return ts.createVariableStatement(
-		modifiers,
-		ts.createVariableDeclarationList([
-			ts.createVariableDeclaration(name, undefined, wrapClass(fileName, c, name))
-		])
-	);
-}
-
-// match `X = class extends React.Component`
-function wrapClassExpression(node: ts.ClassExpression, fileName: string) {
-	const name = getName(node) || (ts.isVariableDeclaration(node.parent) && getName(node.parent));
-	return wrapClass(fileName, node, name);
-}
-
-// match `function foo(props) {...}`
-function wrapFunctionDeclaration(node: ts.FunctionDeclaration, fileName: string, addDefaults: string[]) {
-	const name = getName(node);
-	// remove `export default` modifier into a separate const statement
-	const modifiers = node.modifiers;
-	const isDefault = removeDefault(modifiers);
-	if (isDefault) addDefaults.push(name);
-	// convert to `foo = function foo(props)` expression
-	const f = ts.createFunctionExpression(undefined, undefined, name, undefined, node.parameters, node.type, node.body);
-	return ts.createVariableStatement(
-		modifiers,
-		ts.createVariableDeclarationList([
-			ts.createVariableDeclaration(name, undefined, wrapFunction(fileName, f, name))
-		])
-	);
-}
-
-// match `foo = function(props) {...};`
-function wrapFunctionExpression(node: ts.FunctionExpression, fileName: string) {
-	const name = getName(node) || (ts.isVariableDeclaration(node.parent) && getName(node.parent));
-	return wrapFunction(fileName, node, name);
-}
-
-// match `foo = (props) => ...;`
-function wrapArrowFunction(node: ts.ArrowFunction, fileName: string) {
-	const name = getName(node) || (ts.isVariableDeclaration(node.parent) && getName(node.parent));
-	// convert to `foo = function foo(props)` expression
-	const body = ts.isBlock(node.body) ? node.body : ts.createBlock([ts.createReturn(node.body)]);
-	const f = ts.createFunctionExpression(undefined, undefined, name, undefined, node.parameters, node.type, body);
-	return wrapFunction(fileName, f, name);
 }
 
 /**
@@ -186,105 +89,82 @@ function wrapArrowFunction(node: ts.ArrowFunction, fileName: string) {
  */
 function applyOptions(options: HMRTransformerOptions) {
 	proxyModule = PROXY_MODULE;
-	proxyWrapper = PROXY_WRAPPER;
-	reactBaseClasses = REACT_BASE_CLASSES;
 	if (!options) return;
 
 	if (options.proxyModule) {
 		proxyModule = options.proxyModule;
 	}
-	if (options.proxyWrapper) {
-		proxyWrapper = options.proxyWrapper;
-	}
-	if (Array.isArray(options.reactBaseClasses)) {
-		reactBaseClasses = options.reactBaseClasses;
-	}
 }
 
-/**
- * Skip if already explored, or declaration files or a non-JSX files
- */
-function skipSourceFile(node: { isDeclarationFile: boolean, fileName: string, __explored__?: boolean }) {
-	// nasty?
+function shouldSkipSourceFile(node: SourceFileObject) {
 	if (node.__explored__) return true;
 	node.__explored__ = true;
-
-	return node.isDeclarationFile || !node.fileName.endsWith('.tsx');
+	return node.isDeclarationFile || !node.fileName.endsWith('.tsx') || node.symbol.exports.size == 0;
 }
 
-function getName(node: ts.NamedDeclaration) {
+function createHotStatements(fileName): ts.Statement[] {
+	return reify(`
+		if (module.hot) module.hot.accept();
+		const register = require('${proxyModule}').register;
+		const fileName = "${fileName}";
+		const exports = typeof __webpack_exports__ !== "undefined" ? __webpack_exports__ : module.exports;
+	`);
+}
+
+function createRegistrations(exports: Map<string, SymbolObject>): ts.Statement[] {
+	const statements = [];
+	const names: { [name: string]: number } = {};
+
+	exports.forEach((value, key) => {
+		// find the declaration name
+		let name = getValueName(value.valueDeclaration) || value.name || key;
+		if (name === 'default' && value.declarations) {
+			const declName = getDeclName(value.declarations[0]);
+			if (declName) name = declName;
+		}
+		// ensure unique locally
+		if (names[name]) {
+			name = `${name}_${names[name]++}`;
+		} else {
+			names[name] = 1;
+		}
+		// generate registration
+		statements.push(
+			reify(`register(exports.${key}, "${name}", fileName)`)[0]
+		);
+	});
+	return statements;
+}
+
+function getValueName(node: ts.NamedDeclaration) {
 	return (node && node.name && node.name.kind === ts.SyntaxKind.Identifier && node.name.text) || undefined;
 }
 
-function isReactClass(node: ts.ClassExpression | ts.ClassDeclaration) {
-	// assume a class with a base class and a `render` function are React classes (in `.tsx` files)
-	return (node.heritageClauses && node.heritageClauses.length > 0
-		&& node.members.find(member => getName(member) === 'render'));
+function getDeclName(decl: ts.Node) {
+	return decl && ts.isExportAssignment(decl) && ts.isIdentifier(decl.expression)
+		? decl.expression.text : undefined;
 }
 
-function isReactFunction(node: ts.FunctionDeclaration | ts.FunctionExpression | ts.ArrowFunction) {
-	// `function(props)`
-	if (Array.isArray(node.parameters) && node.parameters.length === 1) {
-		if (getName(node.parameters[0]) === 'props') return true;
-	}
-	// assume exported functions are React functions (in `.tsx` files)
-	if (isExportRec(node)) return true;
-	return false;
+/* Extra typing of intermediary AST objects */
+
+function isSourceFileObject(node: ts.Node): node is SourceFileObject {
+	return ts.isSourceFile && node.hasOwnProperty('symbol');
 }
 
-function isExportRec(node: ts.Node) {
-	if (isExport(node)) return true;
-	if (ts.isVariableDeclarationList(node.parent) && ts.isVariableDeclaration(node.parent.parent)) {
-		return isExport(node.parent.parent);
-	}
+interface SymbolObject extends ts.Node {
+	name: string;
+	valueDeclaration?: ts.NamedDeclaration;
+	exports?: Map<string, SymbolObject>;
+	declarations?: ts.Node[];
+	members?: ts.Node[];
 }
 
-function isExport(node: ts.Node) {
-    return node.modifiers
-        && node.modifiers.find(m => m.kind === ts.SyntaxKind.ExportKeyword);
+interface SourceFileObject extends ts.SourceFile {
+	__explored__?: boolean;
+	symbol: SymbolObject;
 }
 
-/**
- * `export default function/class` needs to be generated as separated declaration and default export
- **/
-function removeDefault(modifiers: ts.ModifiersArray) {
-	if (!modifiers) return false;
-	const di = modifiers.findIndex(modifier => modifier.kind === ts.SyntaxKind.DefaultKeyword);
-	if (di >= 0) {
-		Array.prototype.splice.call(modifiers, di, 1);
-		const ei = modifiers.findIndex(modifier => modifier.kind === ts.SyntaxKind.ExportKeyword);
-		if (ei >= 0) Array.prototype.splice.call(modifiers, ei, 1);
-		return true;
-	}
-	return false;
-}
-
-function wrapClass(fileName: string, expression: ts.Expression, name: string) {
-	// _hmr_proxy_(0, name, filename, class)
-	return ts.createCall(ts.createIdentifier(proxyWrapper), undefined, [
-		ts.createStringLiteral(name),
-		ts.createStringLiteral(fileName),
-		expression
-	]);
-}
-
-function wrapFunction(fileName: string, expression: ts.Expression, name: string) {
-	// _hmr_proxy_(1, name, filename, function)
-	return ts.createCall(ts.createIdentifier(proxyWrapper), undefined, [
-		ts.createStringLiteral(name),
-		ts.createStringLiteral(fileName),
-		expression
-	]);
-}
-
-function hotStatements(makeHot: boolean): ts.Statement[] {
-	return makeHot ? reify(`
-		const ${proxyWrapper} = require('${proxyModule}');
-		if (module.hot) module.hot.accept();
-	`) : [];
-}
-
-/* REIFICATION: AST from source */
+/* Reification helper: create AST from source */
 
 const reified: { [source: string]: ts.Statement[] } = {};
 

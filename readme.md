@@ -1,17 +1,19 @@
 # React HMR for TypeScript
 
-Add React Hot Module Replacement in your TypeScript project:
+A lightweight, Typescript-native, Babel-free, plugin-free, implementation of [react-hot-loader][1].
 
-- **No Babel, no plugin!**
-- This is **TypeScript-native**, using a fancy compile-time AST transformer,
-- Supports both React component classes AND functional components,
+Add React Hot Module Replacement in your TypeScript / Webpack projects!:
+
+- Compile-time transformation is done using a TypeScript compiler hook,
+- Supports both React component classes and functional components,
 - [Webpack][1] + [ts-loader][2] ready, but can support other bundlers and loaders with sufficient HMR / transformer APIs,
 - Reliable HMR feature based on Dan Abramov's [react-proxy][3],
-- **Bonus:** ensures React functions and classes have a `name`, for enhanced debugging experience!
+- **Bonus:** ensures React functions and classes have a `displayName`, for enhanced debugging experience!
 
-[1]: https://webpack.js.org
-[2]: https://github.com/TypeStrong/ts-loader
-[3]: https://github.com/gaearon/react-proxy
+[1]: https://github.com/gaearon/react-hot-loader
+[2]: https://webpack.js.org
+[3]: https://github.com/TypeStrong/ts-loader
+[4]: https://github.com/gaearon/react-proxy
 
 ## Installation
 
@@ -71,25 +73,9 @@ If your `NODE_ENV` isn't correctly set you will see this message in the console:
 [react-hmr-ts] Ensure `process.env.NODE_ENV` is set to "development" for operation
 ```
 
-### Transformer options
-
-You can pass options to `hmrTransformer(options)`, where `options` is an object with optional fields:
-
-- `proxyModule`: module `require`'d by the wrapper HMR proxy (if you want to provide an alternative/instrumented proxy implementation)
-- `proxyWrapper`: name of the generated HMR wrapper (if the `_hmr_proxy_` name is problematic)
-- `reactBaseClasses`: list of base class names considered for React components, if you use custom base classes for your React components (default: `['Component', 'React.Component', 'React.PureComponent']`)
-
-Example:
-
-```javascript
-hmrTransformer({
-    reactBaseClasses: ['React.Component', 'MyFrameworkBaseComponent']
-})
-```
-
 ## React usage
 
-Once the transformation is in place, you need to wrap your root `ReactDOM.render` call in your app entry point:
+Once the compiler transformation is in place, you just need to wrap your root `ReactDOM.render` call:
 
 ```typescript
 import { hot } from 'react-hmr-ts';
@@ -97,61 +83,43 @@ import { hot } from 'react-hmr-ts';
 hot(module)( ReactDOM.render(<App/>) );
 ```
 
-You can keep this code even for release, as **unless** building with `NODE_ENV=development` the HMR logic will be replaced by a no-op.
+When building for release, the HMR logic will be replaced by a no-op.
 
 Now run Webpack dev server and enjoy live component updates!
 
 ## Known issues
 
-### Functional components without `props` parameter
+### Only `.tsx` files are considered
 
-Currently the transformer has a limitation (to avoid false positives):
-functional components **must** be declared with a (exactly) `props` parameter.
+If you use `.ts` and manual `React.createComponent` code, it won't be registered for HMR.
 
-```typescript
-// OK
-function renderText(props) {
-    return <div>{props.text}</div>;
-}
+**Workaround** is to use `.tsx` ;)
 
-// Nope
-function renderText({ text }) {
-    return <div>{text}</div>;
-}
+### Passing non-exported React classes/functions references
 
-// Nope
-function renderText() {
-    return <div>Hardcoded text</div>;
-}
-```
-
-**Workaround** is to use `props` as argument.
-
-### "Recursive" static class field initializers
-
-An issue in TypeScript code generation prevents static fields values referencing other static fields of the same class:
+Non-exported class or function won't be reloaded if their reference is kept outside the module.
 
 ```typescript
-class RecursiveStatic {
-    static A = { name: 'a' };
-    static B = {
-        name: 'b',
-        value: RecursiveStatic.A // <- fails at run time
-    };
+// A.js
+class A extends Component {...};
+export function provideA() {
+    return A;
+}
 
+// B.js
+import {provideA} from 'A';
+export class B extends Component {
+    private ARef;
     constructor() {
-        /* etc. */
+        this.ARef = provideA();
+    }
+    render() {
+        return <ARef/>;
     }
 }
 ```
 
-**Workaround** is to declare the statics outside the class, or set `B.value` after the declaration of the class.
-
-### Only `.tsx` files are considered
-
-If you use `.ts` and manual `React.createComponent` code it won't be wrapped.
-
-**Workaround** is to use JSX ;)
+**Workaround** is to export the class/function even if it won't be used from exports.
 
 ## ISC License
 

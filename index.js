@@ -16,6 +16,7 @@ function listen(cb) {
 
 // hot helper
 function hot(module) {
+	patchReact();
 	return function(node) {
 		if (module.hot) {
 			module.hot.accept();
@@ -28,43 +29,48 @@ function hot(module) {
 }
 
 // register declaration with the HMR proxy
-function register(type, name, source, decl) {
-	if (!decl.name && !decl.displayName) decl.displayName = name;
+function register(type, name, source) {
+	if (typeof type !== 'function') return;
 
-	const key = name + type + '@' + source;
-	let proxy = proxies[key];
+	// ensure display name
+	if (!type.name && !type.displayName) type.displayName = name;
+
+	// tag type
+	const key = name + '@' + source;
+	type._proxy_id_ = key;
+
+	// create/update proxy
+	const proxy = proxies[key];
 	if (!proxy) {
-		proxy = proxies[key] = type ? createFunctionProxy(key, decl) : createProxy(decl);
+		proxies[key] = createProxy(type);
 	} else {
-		proxy.update(decl);
+		proxy.update(type);
 		clearTimeout(dirtyTimer);
 		dirtyTimer = window.setTimeout(notify, 10);
 	}
-
-	return proxy.get();
 }
 
-function createFunctionProxy(key, fn) {
-	// named proxy function
-	const wrapper = function(props) {
-		return proxies[key].fn(props);
-	};
-	Object.defineProperty(wrapper, 'name', { value: fn.name, writable: false });
-	wrapper.displayName = fn.displayName;
-
-	const proxy = {
-		fn: fn,
-		update: function(fn) {
-			this.fn = fn;
-		},
-		get: function() {
-			return wrapper;
+function patchReact() {
+	const React = require('react');
+	if (!!React._hmr_createElement) return;
+	React._hmr_createElement = React.createElement;
+	// override createElement to return the proxy
+	React.createElement = function() {
+		let args = arguments;
+		const type = args[0];
+		if (typeof type === 'function' && type._proxy_id_) {
+			const proxy = proxies[type._proxy_id_];
+			if (proxy) {
+				args = Array.prototype.slice.call(arguments, 1);
+				args.unshift(proxy.get());
+			}
 		}
-	};
-	return (proxies[key] = proxy);
+		return React._hmr_createElement.apply(React, args);
+	}
 }
 
-// expose default / listen
-register.listen = listen;
-register.hot = hot;
-module.exports = register;
+module.exports = {
+	register,
+	listen,
+	hot
+};

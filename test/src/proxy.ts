@@ -1,5 +1,3 @@
-function wrap(type, name, source, decl) {
-    console.log('+ ', type, name, source, typeof decl, decl.name);
+export function register(decl, name, source) {
+    console.log('+', name, source, typeof decl, decl.name);
 }
-
-export = wrap;

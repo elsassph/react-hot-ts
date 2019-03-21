@@ -4,7 +4,7 @@ type HMRCallback = (forceUpdate: ProvideComponent) => void;
 /**
  * Set update callback after React HMR
  */
-export function listen(callback: HMRCallback);
+export function listen(callback: HMRCallback): void;
 
 /**
  * Wrap component for automatic re-render

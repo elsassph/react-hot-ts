@@ -1,0 +1,21 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "lib": ["esnext", "dom"],
+        "noImplicitAny": true,
+        "noImplicitReturns": true,
+        "noUnusedLocals": true,
+        "noFallthroughCasesInSwitch": true,
+        "sourceMap": true,
+        "jsx": "react",
+        "baseUrl": "./",
+        "paths": {
+            "react-hmr-ts": ["../../index.d.ts"]
+        }
+    },
+    "include": [
+        "src/**/*.ts",
+        "src/**/*.tsx"
+    ],
+	"exclude": ["node_modules"]
+}

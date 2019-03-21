@@ -1,5 +1,4 @@
 const path = require('path');
-const webpack = require('webpack');
 const hmrTransformer = require('react-hmr-ts/lib/transformer');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const ForkTsCheckerPlugin = require('fork-ts-checker-webpack-plugin');

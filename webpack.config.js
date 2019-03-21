@@ -46,7 +46,7 @@ module.exports = env => ({
 function getCustomTransformers() {
     return {
         before: [hmrTransformer({
-            proxyModule: path.resolve('test/src/proxy')
+            hmrRuntime: path.resolve('test/src/runtime')
         })]
     };
 }

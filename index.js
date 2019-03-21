@@ -1,3 +1,7 @@
+/*
+ * HMR runtime
+ */
+
 const createProxy = require('react-proxy').createProxy;
 const forceUpdate = require('react-deep-force-update');
 

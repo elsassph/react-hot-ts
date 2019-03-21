@@ -1,4 +1,7 @@
-// Production replacement for the HMR feature
+/*
+ * No-op HMR runtime
+ */
+
 function noop() {}
 function hot(module) {
     return function(component) {

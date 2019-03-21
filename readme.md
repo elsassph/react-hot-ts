@@ -75,7 +75,7 @@ Usage: `hmrTransformer(options)`
 Where `options` is an object with the following optional fields:
 
 - `keepArrows`: opt-out of arrow functions rewriting; this can avoid a lot of extra code (and maybe subtle issues) when targeting ES5 instead of ES6,
-- `proxyModule`: (advanced) specify an alternative module to be required by the client HMR proxy logic.
+- `hmrRuntime`: (advanced) specify an alternative module to be required for the client HMR runtime logic.
 
 Example: `hmrTransformer({ keepArrows: true })`
 
@@ -98,7 +98,7 @@ import { hot } from 'react-hmr-ts';
 hot(module)( ReactDOM.render(<App/>) );
 ```
 
-When building for release, the HMR logic will be replaced by a no-op.
+When building for release, only the HMR runtime will be replaced by a no-op.
 
 Now run Webpack dev server and enjoy live component updates!
 

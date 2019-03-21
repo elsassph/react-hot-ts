@@ -1,16 +1,16 @@
 import * as ts from 'typescript';
 
-const PROXY_MODULE = 'react-hmr-ts';
-let proxyModule: string;
+const HMR_RUNTIME = 'react-hmr-ts';
+let hmrRuntime: string;
 let keepArrows: boolean;
 
 /**
  * HMR transformer options:
- * - proxyModule: module required by the client HMR proxy
+ * - hmrRuntime: module required by the client HMR proxy
  * - keepArrows: leave arrow functions not re-wired to prototype
  */
 type HMRTransformerOptions = {
-	proxyModule?: string;
+	hmrRuntime?: string;
 	keepArrows?: boolean;
 }
 
@@ -81,11 +81,11 @@ function devTransformer(context: ts.TransformationContext) {
  * Apply defaults and user options
  */
 function applyOptions(options: HMRTransformerOptions) {
-	proxyModule = PROXY_MODULE;
+	hmrRuntime = HMR_RUNTIME;
 	if (!options) return;
 
-	if (typeof options.proxyModule === 'string') {
-		proxyModule = options.proxyModule;
+	if (typeof options.hmrRuntime === 'string') {
+		hmrRuntime = options.hmrRuntime;
 	}
 	if (options.keepArrows !== undefined) {
 		keepArrows = options.keepArrows;
@@ -161,7 +161,7 @@ function shouldSkipSourceFile(node: SourceFileObject) {
 function createHotStatements(fileName): ts.Statement[] {
 	return reify(`
 		if (module.hot) module.hot.accept();
-		const register = require('${proxyModule}').register;
+		const register = require('${hmrRuntime}').register;
 		const fileName = "${fileName}";
 		const exports = typeof __webpack_exports__ !== "undefined" ? __webpack_exports__ : module.exports;
 	`);

@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "lib": ["esnext", "dom"],
+        "sourceMap": true,
+        "jsx": "react",
+        "baseUrl": "./"
+    },
+    "include": [
+        "src/**/*.ts",
+        "src/**/*.tsx"
+    ],
+	"exclude": ["node_modules"]
+}

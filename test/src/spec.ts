@@ -1,4 +1,6 @@
 import { assert } from 'chai';
+import { hot } from 'react-hmr-ts';
+import * as React from 'react';
 
 import test4, { test2, test7, test8 } from './functions';
 import Test2, { Test1 } from './classes';
@@ -25,6 +27,18 @@ const cases = [
     },
     function export_class() {
         assert.equal(new Test1().render(), 1);
+    },
+    function patch_react_for_development() {
+        if (process.env.NODE_ENV !== 'production') {
+            hot(module)({});
+            assert.isDefined((React as any)._hmr_createElement);
+        }
+    },
+    function no_patch_react_for_production() {
+        if (process.env.NODE_ENV === 'production') {
+            hot(module)({});
+            assert.isUndefined((React as any)._hmr_createElement);
+        }
     }
 ];
 

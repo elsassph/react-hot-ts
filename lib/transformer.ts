@@ -32,10 +32,9 @@ function hmrTransformer(options: HMRTransformerOptions): (context: ts.Transforma
  */
 function prodTransformer(context: ts.TransformationContext) {
 	const visitor = (node: ts.Node) => {
-		if (ts.isSourceFile(node)) {
-			const imports: ({ text: string })[] = (node as any).imports;
+		if (isSourceFileObject(node)) {
 			// replace `react-hmr-ts` imports by a cold version for production
-			if (imports && imports.find(imp => imp.text === 'react-hmr-ts')) {
+			if (node.imports && node.imports.find(imp => imp.text === 'react-hmr-ts')) {
 				const statements = node.statements.map(s => {
 					if (ts.isImportDeclaration(s)
 						&& ts.isStringLiteral(s.moduleSpecifier)
@@ -214,7 +213,7 @@ function getDeclName(decl: ts.Node) {
 /* Extra typing of intermediary AST objects */
 
 function isSourceFileObject(node: ts.Node): node is SourceFileObject {
-	return ts.isSourceFile && node.hasOwnProperty('symbol');
+	return ts.isSourceFile(node) && node.hasOwnProperty('symbol');
 }
 
 interface SymbolObject extends ts.Node {
@@ -225,9 +224,14 @@ interface SymbolObject extends ts.Node {
 	members?: ts.Node[];
 }
 
+interface TokenObject extends ts.Token<any> {
+	text: string;
+}
+
 interface SourceFileObject extends ts.SourceFile {
 	__explored__?: boolean;
 	symbol: SymbolObject;
+	imports?: TokenObject[];
 }
 
 /* Reification helper: create AST from source */

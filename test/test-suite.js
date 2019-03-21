@@ -3,7 +3,7 @@ const printDiff = require('print-diff');
 
 const ANON_CLASS = process.argv.length > 1 && process.argv[2] == 'es6' ? 'Component' : 'class_1';
 
-const EXPECT = `
+const EXPECT_PROXY = process.env.NODE_ENV === 'production' ? '' : `
 + test1 {{DIR}}/src/functions.tsx function test1
 + test2 {{DIR}}/src/functions.tsx function test2
 + test3 {{DIR}}/src/functions.tsx function test3
@@ -14,7 +14,9 @@ const EXPECT = `
 + test4 {{DIR}}/src/functions.tsx function test4
 + Test1 {{DIR}}/src/classes.tsx function ${ANON_CLASS}
 + Test2 {{DIR}}/src/classes.tsx function Test2
-+ Test4 {{DIR}}/src/classes.tsx function NotTest4
++ Test4 {{DIR}}/src/classes.tsx function NotTest4`;
+
+const EXPECT_TESTS = `
 - default_export_function_with_props
 - export_function_with_props
 - export_multiple_arrow_functions
@@ -22,7 +24,10 @@ const EXPECT = `
 - export_default_class
 - export_arrow_function_forward
 - export_class
-`;
+- patch_react_for_development
+- no_patch_react_for_production`;
+
+const EXPECT = EXPECT_PROXY + EXPECT_TESTS;
 
 exec('node test/dist/test.js', (error, stdout, stderr) => {
     if (error) {

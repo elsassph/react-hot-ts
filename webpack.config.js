@@ -1,8 +1,11 @@
 const path = require('path');
 const webpack = require('webpack');
+const hmrTransformer = require('./lib/transformer');
+
+const isProd = process.env.NODE_ENV === "production";
 
 module.exports = env => ({
-    mode: "development",
+    mode: isProd ? "production" : "development",
     target: "node",
     devtool: "source-map",
     entry: "./test/src/spec.ts",
@@ -10,8 +13,16 @@ module.exports = env => ({
         path: path.join(__dirname, 'test/dist'),
         filename: "test.js"
     },
+    optimization: {
+        minimize: false
+    },
     resolve: {
-        extensions: [".ts", ".tsx", ".js"]
+        extensions: [".ts", ".tsx", ".js"],
+        alias: {
+            "react": path.resolve('test/src/react'),
+            "react-hmr-ts/cold.js": path.resolve("./cold.js"),
+            "react-hmr-ts": path.resolve("./index.js")
+        }
     },
     module: {
         rules: [
@@ -27,14 +38,14 @@ module.exports = env => ({
             }
         ]
     },
-    plugins: [
+    plugins: isProd ? [] : [
         new webpack.HotModuleReplacementPlugin()
     ]
 });
 
 function getCustomTransformers() {
     return {
-        before: [require('./lib/transformer')({
+        before: [hmrTransformer({
             proxyModule: path.resolve('test/src/proxy')
         })]
     };

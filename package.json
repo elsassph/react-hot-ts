@@ -6,7 +6,8 @@
     "build": "tsc lib/transformer.ts -d",
     "test:es5": "webpack --env.es5 && node test/test-suite.js es5",
     "test:es6": "webpack --env.es6 && node test/test-suite.js es6",
-    "test": "yarn build && yarn test:es5 && yarn test:es6"
+    "test:all": "yarn test:es5 && yarn test:es6",
+    "test": "yarn build && yarn test:all && NODE_ENV=production yarn test:all"
   },
   "main": "index.js",
   "files": [

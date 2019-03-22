@@ -67,7 +67,7 @@ function devTransformer(context: ts.TransformationContext) {
 				ts.createEmptyStatement(),
 				ts.createStatement(ts.createImmediatelyInvokedFunctionExpression([
 					...createHotStatements(node.fileName),
-					...createRegistrations(node.symbol.exports)
+					...createRegistrations(node.symbol.exports, node.fileName)
 				]))
 			];
 			return ts.updateSourceFileNode(node, statements);
@@ -167,7 +167,7 @@ function createHotStatements(fileName): ts.Statement[] {
 	`);
 }
 
-function createRegistrations(exports: Map<string, SymbolObject>): ts.Statement[] {
+function createRegistrations(exports: Map<string, SymbolObject>, fileName: string): ts.Statement[] {
 	const statements = [];
 	const names: { [name: string]: number } = {};
 
@@ -177,6 +177,9 @@ function createRegistrations(exports: Map<string, SymbolObject>): ts.Statement[]
 		if (name === 'default' && value.declarations) {
 			const declName = getDeclName(value.declarations[0]);
 			if (declName) name = declName;
+		}
+		if (name === 'default') {
+			name = getFileName(fileName) || 'default';
 		}
 		// ensure unique locally
 		if (names[name]) {
@@ -190,6 +193,11 @@ function createRegistrations(exports: Map<string, SymbolObject>): ts.Statement[]
 		);
 	});
 	return statements;
+}
+
+function getFileName(fileName: string) {
+	const m = /([^.\/\\]+).tsx?$/.exec(fileName);
+	return m && m[1] ? m[1] : undefined;
 }
 
 function getBody(node: ts.FunctionLike) {

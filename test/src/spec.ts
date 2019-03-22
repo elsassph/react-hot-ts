@@ -2,8 +2,9 @@ import { assert } from 'chai';
 import { hot } from 'react-hmr-ts';
 import * as React from 'react';
 
-import test4, { test2, test7, test8 } from './functions';
-import Test2, { Test1 } from './classes';
+import test4, { test2, test7, test8 } from './cases/functions';
+import Test2, { Test1 } from './cases/classes';
+import Wrapped from './cases/Wrapped';
 
 const cases = [
     function default_export_function_with_props() {
@@ -27,6 +28,9 @@ const cases = [
     },
     function export_class() {
         assert.equal(new Test1().render(), 1);
+    },
+    function wrapped_default_renamed() {
+        assert.equal(Wrapped(2), 2);
     },
     function patch_react_for_development() {
         if (process.env.NODE_ENV !== 'production') {

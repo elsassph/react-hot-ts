@@ -2,15 +2,16 @@
  * HMR runtime
  */
 
-const createProxy = require('react-proxy').createProxy;
-const forceUpdate = require('react-deep-force-update');
+let reactProxy = require('react-proxy'); // could be aliased to `react-stand-in`
+const createProxy = reactProxy.default || reactProxy.createProxy;
+const getForceUpdate = require('react-deep-force-update');
 
 const proxies = (global._hmr_proxies_ = global._hmr_proxies_ || {});
 let dirtyTimer;
 let dirtyCallback;
 
 function notify() {
-	dirtyCallback && dirtyCallback(forceUpdate(require('react')));
+	dirtyCallback && dirtyCallback(getForceUpdate(require('react')));
 }
 
 // allow handling events directly
@@ -19,15 +20,19 @@ function listen(cb) {
 }
 
 // hot helper
-function hot(module) {
+function hot(module, accept) {
 	patchReact();
+
+	if (accept) {
+		accept(module, proxies);
+	} else if (module && module.hot) {
+        module.hot.accept();
+	}
+
 	return function(node) {
-		if (module.hot) {
-			module.hot.accept();
-			listen(function(forceUpdate) {
-				forceUpdate(node);
-			});
-		}
+		listen(function(forceUpdate) {
+			forceUpdate(node);
+		});
 		return node;
 	}
 }
@@ -47,9 +52,7 @@ function register(type, name, source) {
 
 	// create/update proxy
 	const proxy = proxies[key];
-	if (!proxy) {
-		proxies[key] = createProxy(type);
-	} else {
+	if (proxy) {
 		proxy.update(type);
 		clearTimeout(dirtyTimer);
 		dirtyTimer = window.setTimeout(notify, 10);
@@ -65,11 +68,12 @@ function patchReact() {
 		let args = arguments;
 		const type = args[0];
 		if (typeof type === 'function' && type._proxy_id_) {
-			const proxy = proxies[type._proxy_id_];
-			if (proxy) {
-				args = Array.prototype.slice.call(arguments, 1);
-				args.unshift(proxy.get());
+			let proxy = proxies[type._proxy_id_];
+			if (!proxy) {
+				proxy = proxies[key] = createProxy(type);
 			}
+			args = Array.prototype.slice.call(arguments, 1);
+			args.unshift(proxy.get());
 		}
 		return React._hmr_createElement.apply(React, args);
 	}

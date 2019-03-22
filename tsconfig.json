@@ -11,5 +11,6 @@
             "react-hmr-ts": ["./index.js"],
             "react": ["test/src/react"]
         }
-    }
+    },
+    "include": ["test/src"]
 }

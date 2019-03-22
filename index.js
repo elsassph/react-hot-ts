@@ -26,7 +26,7 @@ function hot(module, accept) {
 	if (accept) {
 		accept(module, proxies);
 	} else if (module && module.hot) {
-        module.hot.accept();
+		module.hot.accept();
 	}
 
 	return function(node) {

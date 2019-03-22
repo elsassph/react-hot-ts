@@ -70,7 +70,7 @@ function patchReact() {
 		if (typeof type === 'function' && type._proxy_id_) {
 			let proxy = proxies[type._proxy_id_];
 			if (!proxy) {
-				proxy = proxies[key] = createProxy(type);
+				proxy = proxies[type._proxy_id_] = createProxy(type);
 			}
 			args = Array.prototype.slice.call(arguments, 1);
 			args.unshift(proxy.get());

@@ -2,6 +2,12 @@
 
 A minimal [FuseBox][1] + Typescript + React with hot reload using [react-hmr-ts][2].
 
+Thanks to `react-hmr-ts`:
+
+- React component can be hot-reloaded without state loss,
+- Components reload deep behind `PureComponent/shouldComponentUpdate`,
+- And even arrow function fields can reload.
+
 The example doesn't include any resources loading (e.g. CSS, images...).
 
 [1]: https://fuse-box.org/
@@ -27,16 +33,9 @@ Automatic dev server with hot module replacement:
 node fuse
 ```
 
-Static development build with sourcemaps:
-
-```
-TODO
-```
-
 ## Release
 
-Static production build:
+Look into [QuantumPlugin][1] and [Sparky][2].
 
-```
-TODO
-```
+[1]: https://fuse-box.org/docs/production-builds/quantum
+[2]: https://fuse-box.org/docs/task-runner/getting-started-with-sparky

@@ -1,6 +1,7 @@
-const hmrTransformer = require('react-hmr-ts/lib/transformer');
 
 const { FuseBox, WebIndexPlugin } = require('fuse-box');
+const hmrTransformer = require('react-hmr-ts/lib/transformer');
+
 const fuse = FuseBox.init({
     homeDir : "src",
     output : "dist/$name.js",
@@ -9,12 +10,12 @@ const fuse = FuseBox.init({
     plugins : [
         WebIndexPlugin()
     ],
-    // Install `react-stand-in` and enable the `react-proxy` alias if targeting ES6
     alias: {
+        // If targeting ES6+, install `react-stand-in` and alias `react-proxy`:
         // "react-proxy": "react-stand-in"
     },
-    // React HMR uses a compiler transformation
     transformers: {
+        // React HMR using a compiler transformation
         before: [hmrTransformer()]
     }
 });
@@ -23,5 +24,5 @@ fuse.dev();
 fuse.bundle("app")
     .watch()
     .hmr()
-    .instructions(" > index.tsx");
+    .instructions("> index.tsx");
 fuse.run();

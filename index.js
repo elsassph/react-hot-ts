@@ -21,8 +21,6 @@ function listen(cb) {
 
 // hot helper
 function hot(module, accept) {
-	patchReact();
-
 	if (accept) {
 		accept(module, proxies);
 	} else if (module && module.hot) {
@@ -40,6 +38,9 @@ function hot(module, accept) {
 // register declaration with the HMR proxy
 function register(type, name, source) {
 	if (typeof type !== 'function') return;
+
+	// enable react components proxying
+	patchReact();
 
 	// ensure display name
 	if (!type.name && !type.displayName && name !== 'default') {

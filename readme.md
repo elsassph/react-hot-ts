@@ -74,6 +74,7 @@ Usage: `hmrTransformer(options)`
 
 Where `options` is an object with the following optional fields:
 
+- `disable`: force release mode, disregarding `NODE_ENV` value,
 - `keepArrows`: opt-out of arrow functions rewriting; this can avoid a lot of extra code (and maybe subtle issues) when targeting ES5 instead of ES6,
 - `hmrRuntime`: (advanced) specify an alternative module to be required for the client HMR runtime logic.
 

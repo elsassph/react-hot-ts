@@ -6,10 +6,12 @@ let keepArrows: boolean;
 
 /**
  * HMR transformer options:
+ * - disable: behave like NODE_ENV=production
  * - hmrRuntime: module required by the client HMR proxy
  * - keepArrows: leave arrow functions not re-wired to prototype
  */
 type HMRTransformerOptions = {
+	disable?: string;
 	hmrRuntime?: string;
 	keepArrows?: boolean;
 }
@@ -19,8 +21,8 @@ type HMRTransformerOptions = {
  * Wraps React classes and functional components for HMR
  */
 function hmrTransformer(options: HMRTransformerOptions): (context: ts.TransformationContext) => ts.Visitor {
-	applyOptions(options);
-	if (process.env.NODE_ENV === 'production') {
+	const disabled = applyOptions(options);
+	if (disabled || process.env.NODE_ENV === 'production') {
 		console.log('[react-hmr-ts] disabled for production');
 		return prodTransformer;
 	}
@@ -82,7 +84,7 @@ function devTransformer(context: ts.TransformationContext) {
  */
 function applyOptions(options: HMRTransformerOptions) {
 	hmrRuntime = HMR_RUNTIME;
-	if (!options) return;
+	if (!options) return false;
 
 	if (typeof options.hmrRuntime === 'string') {
 		hmrRuntime = options.hmrRuntime;
@@ -90,6 +92,8 @@ function applyOptions(options: HMRTransformerOptions) {
 	if (options.keepArrows !== undefined) {
 		keepArrows = options.keepArrows;
 	}
+
+	return !!options.disable;
 }
 
 function visitStatements(statements: ts.NodeArray<ts.Statement>) {

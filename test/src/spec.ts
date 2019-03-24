@@ -34,14 +34,16 @@ const cases = [
     },
     function patch_react_for_development() {
         if (process.env.NODE_ENV !== 'production') {
-            hot(module)({});
-            assert.isDefined((React as any)._hmr_createElement);
+            let acceptCalled = false;
+            hot(module, () => acceptCalled = true)({});
+            assert.isTrue(acceptCalled);
         }
     },
     function no_patch_react_for_production() {
         if (process.env.NODE_ENV === 'production') {
-            hot(module)({});
-            assert.isUndefined((React as any)._hmr_createElement);
+            let acceptCalled = false;
+            hot(module, () => acceptCalled = true)({});
+            assert.isFalse(acceptCalled);
         }
     }
 ];

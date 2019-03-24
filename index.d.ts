@@ -9,4 +9,4 @@ export function listen(callback: HMRCallback): void;
 /**
  * Wrap component for automatic re-render
  */
-export function hot(module: NodeModule): ProvideComponent;
+export function hot(module?: NodeModule): ProvideComponent;

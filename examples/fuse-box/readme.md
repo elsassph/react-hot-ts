@@ -1,6 +1,6 @@
-# Webpack 4 example
+# FuseBox example
 
-A minimal [Webpack][1] + Typescript + React with hot reload using [react-hmr-ts][2].
+A minimal [FuseBox][1] + Typescript + React with hot reload using [react-hmr-ts][2].
 
 Thanks to `react-hmr-ts`:
 
@@ -10,7 +10,7 @@ Thanks to `react-hmr-ts`:
 
 The example doesn't include any resources loading (e.g. CSS, images...).
 
-[1]: https://webpack.js.org/
+[1]: https://fuse-box.org/
 [2]: https://github.com/elsassph/react-hmr-ts
 
 ## Installation
@@ -30,19 +30,12 @@ yarn
 Automatic dev server with hot module replacement:
 
 ```
-npm start
-```
-
-Static development build with sourcemaps:
-
-```
-npm run dev
+node fuse
 ```
 
 ## Release
 
-Static production build:
+Look into [QuantumPlugin][1] and [Sparky][2].
 
-```
-npm run build
-```
+[1]: https://fuse-box.org/docs/production-builds/quantum
+[2]: https://fuse-box.org/docs/task-runner/getting-started-with-sparky

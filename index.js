@@ -56,7 +56,7 @@ function register(type, name, source) {
 	if (proxy) {
 		proxy.update(type);
 		clearTimeout(dirtyTimer);
-		dirtyTimer = window.setTimeout(notify, 10);
+		dirtyTimer = window.setTimeout(notify, 100);
 	}
 }
 

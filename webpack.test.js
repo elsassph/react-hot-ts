@@ -30,6 +30,7 @@ module.exports = env => ({
                 test: /\.tsx?$/,
                 loader: "ts-loader",
                 options: {
+                    configFile: path.resolve('test/src/tsconfig.json'),
                     compilerOptions: {
                         target: env && env.es6 ? "es6" : "es5",
                     },

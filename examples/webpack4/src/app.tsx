@@ -18,7 +18,7 @@ export default class App extends React.PureComponent<{}, AppState> {
 
     render() {
         return <div onClick={this.onClick}>
-            <h1>HMR demo FuseBox app { this.state.counter }</h1>
+            <h1>HMR demo Webpack app { this.state.counter }</h1>
             <Counter/>
         </div>
     }

@@ -1,13 +1,13 @@
 {
   "name": "react-hmr-ts",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "React HMR support for Typescript as AST transformer",
   "scripts": {
     "build": "tsc lib/transformer.ts -d",
-    "test:es5": "webpack --env.es5 && node test/test-suite.js es5",
-    "test:es6": "webpack --env.es6 && node test/test-suite.js es6",
+    "test:es5": "webpack --env.es5 --config webpack.test.js && node test/test-suite.js es5",
+    "test:es6": "webpack --env.es6 --config webpack.test.js && node test/test-suite.js es6",
     "test:all": "yarn test:es5 && yarn test:es6",
-    "test": "yarn build && yarn test:all && NODE_ENV=production yarn test:all"
+    "test": "yarn build && cd test && yarn test:all && NODE_ENV=production yarn test:all"
   },
   "main": "index.js",
   "files": [
@@ -30,7 +30,7 @@
   },
   "devDependencies": {
     "@types/chai": "^4.1.7",
-    "@types/node": "^11.11.3",
+    "@types/node": "^11.11.6",
     "chai": "^4.2.0",
     "print-diff": "^0.1.1",
     "ts-loader": "^5.3.3",

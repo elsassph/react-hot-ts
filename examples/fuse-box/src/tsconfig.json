@@ -1,12 +1,17 @@
 {
   "compilerOptions": {
-    "module": "CommonJS",
+    "module": "commonjs",
     "target": "es5",
     "lib": ["dom", "esnext"],
+    "esModuleInterop": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noFallthroughCasesInSwitch": true,
+    "importHelpers": true,
     "sourceMap": true,
     "inlineSources": true,
     "jsx": "react",
-    "baseUrl": ".",
-    "importHelpers": true
+    "baseUrl": "."
   }
 }

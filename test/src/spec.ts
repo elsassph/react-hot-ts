@@ -1,6 +1,5 @@
 import { assert } from 'chai';
 import { hot } from 'react-hmr-ts';
-import * as React from 'react';
 
 import test4, { test2, test7, test8 } from './cases/functions';
 import Test2, { Test1 } from './cases/classes';
@@ -41,6 +40,7 @@ const cases = [
     },
     function no_patch_react_for_production() {
         if (process.env.NODE_ENV === 'production') {
+            // `react-hmr-ts` should be replaced by the cold implementation for release
             let acceptCalled = false;
             hot(module, () => acceptCalled = true)({});
             assert.isFalse(acceptCalled);

@@ -2,24 +2,31 @@
 
 A lightweight, Typescript-native, Babel-free, plugin-free, implementation of [react-hot-loader][1].
 
-Add React Hot Module Replacement in your TypeScript / Webpack projects!:
+Add React hot-reload (live update without losing state) in your TypeScript projects!
+
+## Supported bundlers
+
+- [Webpack][2] + [ts-loader][3]
+- [FuseBox][4]
+
+## Features
 
 - Compile-time transformation is done using a TypeScript compiler hook,
 - Supports both React component classes and functional components,
-- [Webpack][2] + [ts-loader][3] ready, but can support other bundlers and loaders with sufficient HMR / transformer APIs,
-- Reliable HMR feature based on Dan Abramov's [react-proxy][4] (note: you should alias it to [react-stand-in][5] when targeting ES6),
+- Reliable hot-reload feature based on Dan Abramov's [react-proxy][5] (for ES5) or [react-stand-in][6] for ES6 (just alias),
 - Support both ES5 and ES6 compilation targets.
 
-**Bonus:**
+## Bonus
 
-- rewrites arrow functions to be hot-reload friendly (can be opt-out),
-- ensures React functions and classes have a "display name", for enhanced debugging experience.
+- Rewrites arrow functions to be hot-reload friendly (can be opt-out),
+- Ensures React functions and classes have a "display name", for enhanced debugging experience.
 
 [1]: https://github.com/gaearon/react-hot-loader
 [2]: https://webpack.js.org
 [3]: https://github.com/TypeStrong/ts-loader
-[4]: https://github.com/gaearon/react-proxy
-[5]: https://github.com/theKashey/react-stand-in
+[4]: https://fuse-box.org/
+[5]: https://github.com/gaearon/react-proxy
+[6]: https://github.com/theKashey/react-stand-in
 
 ## Installation
 

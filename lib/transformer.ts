@@ -99,7 +99,7 @@ function applyOptions(options: HMRTransformerOptions) {
 function visitStatements(statements: ts.NodeArray<ts.Statement>) {
 	if (keepArrows) return statements;
 
-	return Array.prototype.map.call(statements, statement => {
+	return Array.prototype.map.call(statements, (statement: ts.Statement) => {
 		if (ts.isClassDeclaration(statement) && hasArrowFunctions(statement)) {
 			const members = transformArrows(statement.members);
 			return ts.updateClassDeclaration(
@@ -113,7 +113,7 @@ function visitStatements(statements: ts.NodeArray<ts.Statement>) {
 
 // transform arrow-function members into prototype-backed functions
 function transformArrows(members: ts.NodeArray<ts.ClassElement>) {
-	const extraMembers = [];
+	const extraMembers: ts.ClassElement[] = [];
 	const newMembers = members.map(member => {
 		if (ts.isPropertyDeclaration(member) && member.initializer && ts.isArrowFunction(member.initializer)) {
 			const fun = member.initializer;
@@ -162,7 +162,7 @@ function shouldSkipSourceFile(node: SourceFileObject) {
 	return node.isDeclarationFile || !node.fileName.endsWith('.tsx') || node.symbol.exports.size == 0;
 }
 
-function createHotStatements(fileName): ts.Statement[] {
+function createHotStatements(fileName: string): ts.Statement[] {
 	return reify(`
 		if (module.hot) module.hot.accept();
 		const register = require('${hmrRuntime}').register;
@@ -172,7 +172,7 @@ function createHotStatements(fileName): ts.Statement[] {
 }
 
 function createRegistrations(exports: Map<string, SymbolObject>, fileName: string): ts.Statement[] {
-	const statements = [];
+	const statements: ts.Statement[] = [];
 	const names: { [name: string]: number } = {};
 
 	exports.forEach((value, key) => {
@@ -257,7 +257,7 @@ function reify(source: string, noCache?: boolean): ts.Statement[] {
 	const sourceFile: ts.SourceFile = ts.createSourceFile(
 		'template.ts', source, ts.ScriptTarget.ES2015, true, ts.ScriptKind.TS
 	);
-	const result = Array.prototype.filter.call(sourceFile.statements, s => !ts.isEmptyStatement(s));
+	const result = Array.prototype.filter.call(sourceFile.statements, (s: ts.Statement) => !ts.isEmptyStatement(s));
 	anonymize(result);
 	if (!noCache) reified[source] = result;
 	return result;

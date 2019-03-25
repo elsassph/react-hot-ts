@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es5",
+    "lib": ["esnext"],
+    "noFallthroughCasesInSwitch": true,
+    "sourceMap": true,
+    "jsx": "react",
+    "baseUrl": ".",
+    "paths": {
+      "react": ["./react.ts"],
+      "react-hmr-ts": ["../../index.js"]
+    }
+  },
+  "include": ["."],
+  "exclude": ["node_modules"]
+}

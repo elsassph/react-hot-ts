@@ -9,7 +9,7 @@
     "baseUrl": ".",
     "paths": {
       "react": ["./react.ts"],
-      "react-hmr-ts": ["../../index.js"]
+      "react-hot-ts": ["../../index.js"]
     }
   },
   "include": ["."],

@@ -1,5 +1,5 @@
 const path = require('path');
-const hmrTransformer = require('react-hmr-ts/lib/transformer');
+const rhTransformer = require('react-hot-ts/lib/transformer');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const ForkTsCheckerPlugin = require('fork-ts-checker-webpack-plugin');
 
@@ -35,7 +35,7 @@ module.exports = {
 
 function getCustomTransformers() {
     return {
-        before: [hmrTransformer()]
+        before: [rhTransformer()]
     };
 }
 

@@ -1,8 +1,8 @@
 # Webpack 4 example
 
-A minimal [Webpack][1] + Typescript + React with hot reload using [react-hmr-ts][2].
+A minimal [Webpack][1] + Typescript + React with hot reload using [react-hot-ts][2].
 
-Thanks to `react-hmr-ts`:
+Thanks to `react-hot-ts`:
 
 - React component can be hot-reloaded without state loss,
 - Components reload deep behind `PureComponent/shouldComponentUpdate`,
@@ -11,7 +11,7 @@ Thanks to `react-hmr-ts`:
 The example doesn't include any resources loading (e.g. CSS, images...).
 
 [1]: https://webpack.js.org/
-[2]: https://github.com/elsassph/react-hmr-ts
+[2]: https://github.com/elsassph/react-hot-ts
 
 ## Installation
 

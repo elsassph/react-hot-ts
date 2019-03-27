@@ -35,6 +35,7 @@ const EXPECT = EXPECT_PROXY + EXPECT_TESTS;
 exec('node test/dist/test.js', (error, stdout, stderr) => {
     if (error) {
         console.error(stdout);
+        console.error(stderr);
         process.exit(1);
     }
     const expected = strip(EXPECT.replace(/{{DIR}}/g, __dirname));

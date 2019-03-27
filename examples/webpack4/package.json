@@ -1,7 +1,7 @@
 {
   "name": "webpack4-example",
   "version": "1.0.0",
-  "description": "Webpack 4 example with react-hmr-ts",
+  "description": "Webpack 4 example with react-hot-ts",
   "scripts": {
     "start": "webpack-dev-server --hot",
     "dev": "webpack --mode=development",
@@ -15,7 +15,7 @@
     "@types/react-dom": "^16.8.3",
     "react": "^16.8.4",
     "react-dom": "^16.8.4",
-    "react-hmr-ts": "^0.6.2"
+    "react-hot-ts": "^0.7.0"
   },
   "devDependencies": {
     "fork-ts-checker-webpack-plugin": "^1.0.0",

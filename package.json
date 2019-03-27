@@ -1,9 +1,9 @@
 {
-  "name": "react-hmr-ts",
-  "version": "0.6.2",
+  "name": "react-hot-ts",
+  "version": "0.7.1",
   "description": "React HMR support for Typescript as AST transformer",
   "scripts": {
-    "build": "tsc lib/transformer.ts -d",
+    "build": "tsc -t es5 -m commonjs -d index.ts && tsc lib/transformer.ts -d",
     "test:es5": "webpack --env.es5 --config webpack.test.js && node test/test-suite.js es5",
     "test:es6": "webpack --env.es6 --config webpack.test.js && node test/test-suite.js es6",
     "test:all": "yarn test:es5 && yarn test:es6",
@@ -27,6 +27,10 @@
   "license": "ISC",
   "dependencies": {
     "react-proxy": "^1.1.8"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elsassph/react-hot-ts.git"
   },
   "devDependencies": {
     "@types/chai": "^4.1.7",

@@ -1,6 +1,6 @@
 const path = require('path');
 const webpack = require('webpack');
-const hmrTransformer = require('./lib/transformer');
+const rhTransformer = require('./lib/transformer');
 
 const isProd = process.env.NODE_ENV === "production";
 
@@ -20,8 +20,8 @@ module.exports = env => ({
         extensions: [".ts", ".tsx", ".js"],
         alias: {
             "react": path.resolve('test/src/react'),
-            "react-hmr-ts/cold.js": path.resolve("./cold.js"),
-            "react-hmr-ts": path.resolve("./index.js")
+            "react-hot-ts/cold.js": path.resolve("./cold.js"),
+            "react-hot-ts": path.resolve("./index.js")
         }
     },
     module: {
@@ -46,8 +46,8 @@ module.exports = env => ({
 
 function getCustomTransformers() {
     return {
-        before: [hmrTransformer({
-            hmrRuntime: path.resolve('test/src/runtime')
+        before: [rhTransformer({
+            rhRuntime: path.resolve('test/src/runtime')
         })]
     };
 }

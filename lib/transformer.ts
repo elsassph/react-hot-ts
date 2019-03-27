@@ -1,18 +1,18 @@
 import * as ts from 'typescript';
 
-const HMR_RUNTIME = 'react-hmr-ts';
-let hmrRuntime: string;
+const RH_RUNTIME = 'react-hot-ts';
+let rhRuntime: string;
 let keepArrows: boolean;
 
 /**
  * HMR transformer options:
  * - disable: behave like NODE_ENV=production
- * - hmrRuntime: module required by the client HMR proxy
+ * - rhRuntime: module required by the client HMR proxy
  * - keepArrows: leave arrow functions not re-wired to prototype
  */
-type HMRTransformerOptions = {
+type rhTransformerOptions = {
 	disable?: string;
-	hmrRuntime?: string;
+	rhRuntime?: string;
 	keepArrows?: boolean;
 }
 
@@ -20,10 +20,10 @@ type HMRTransformerOptions = {
  * TypeScript AST transformer
  * Wraps React classes and functional components for HMR
  */
-function hmrTransformer(options: HMRTransformerOptions): (context: ts.TransformationContext) => ts.Visitor {
+function rhTransformer(options: rhTransformerOptions): (context: ts.TransformationContext) => ts.Visitor {
 	const disabled = applyOptions(options);
 	if (disabled || process.env.NODE_ENV === 'production') {
-		console.log('[react-hmr-ts] disabled for production');
+		console.log('[react-hot-ts] disabled for production');
 		return prodTransformer;
 	}
 	return devTransformer;
@@ -35,16 +35,16 @@ function hmrTransformer(options: HMRTransformerOptions): (context: ts.Transforma
 function prodTransformer(context: ts.TransformationContext) {
 	const visitor = (node: ts.Node) => {
 		if (isSourceFileObject(node)) {
-			// replace `react-hmr-ts` imports by a cold version for production
-			if (node.imports && node.imports.find(imp => imp.text === 'react-hmr-ts')) {
+			// replace `react-hot-ts` imports by a cold version for production
+			if (node.imports && node.imports.find(imp => imp.text === 'react-hot-ts')) {
 				const statements = node.statements.map(s => {
 					if (ts.isImportDeclaration(s)
 						&& ts.isStringLiteral(s.moduleSpecifier)
-						&& s.moduleSpecifier.text === 'react-hmr-ts'
+						&& s.moduleSpecifier.text === 'react-hot-ts'
 					) {
 						return ts.updateImportDeclaration(s,
 							s.decorators, s.modifiers, s.importClause,
-							ts.createStringLiteral('react-hmr-ts/cold.js'));
+							ts.createStringLiteral('react-hot-ts/cold.js'));
 					} else return s;
 				});
 				return ts.updateSourceFileNode(node, statements);
@@ -82,12 +82,12 @@ function devTransformer(context: ts.TransformationContext) {
 /**
  * Apply defaults and user options
  */
-function applyOptions(options: HMRTransformerOptions) {
-	hmrRuntime = HMR_RUNTIME;
+function applyOptions(options: rhTransformerOptions) {
+	rhRuntime = RH_RUNTIME;
 	if (!options) return false;
 
-	if (typeof options.hmrRuntime === 'string') {
-		hmrRuntime = options.hmrRuntime;
+	if (typeof options.rhRuntime === 'string') {
+		rhRuntime = options.rhRuntime;
 	}
 	if (options.keepArrows !== undefined) {
 		keepArrows = options.keepArrows;
@@ -165,7 +165,7 @@ function shouldSkipSourceFile(node: SourceFileObject) {
 function createHotStatements(fileName: string): ts.Statement[] {
 	return reify(`
 		if (module.hot) module.hot.accept();
-		const register = require('${hmrRuntime}').register;
+		const register = require('${rhRuntime}').register;
 		const fileName = "${fileName}";
 		const exports = typeof __webpack_exports__ !== "undefined" ? __webpack_exports__ : module.exports;
 	`);
@@ -274,4 +274,4 @@ function anonymize(o: any) {
 	}
 }
 
-export = hmrTransformer;
+export = rhTransformer;

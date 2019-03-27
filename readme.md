@@ -1,4 +1,4 @@
-# React HMR for TypeScript
+# React hot loader for TypeScript
 
 A lightweight, Typescript-native, Babel-free, plugin-free, implementation of [react-hot-loader][1].
 
@@ -31,11 +31,11 @@ Add React hot-reload (live update without losing state) in your TypeScript proje
 ## Installation
 
 ```
-npm install react-hmr-ts -D
+npm install react-hot-ts -D
 ```
 Or
 ```
-yarn add react-hmr-ts -D
+yarn add react-hot-ts -D
 ```
 
 ## Webpack configuration
@@ -49,7 +49,7 @@ Just 2 steps:
 2. Configure the TypeScript loader with a custom transformer (you can keep it in your production builds)
 
 ```javascript
-const hmrTransformer = require('react-hmr-ts/lib/transformer');
+const rhTransformer = require('react-hot-ts/lib/transformer');
 /*...*/
 
 module.exports = {
@@ -60,9 +60,9 @@ module.exports = {
             use: [{
                 loader: 'ts-loader',
                 options: {
-                    // enable TS HMR transformation
+                    // enable TS transformation
                     getCustomTransformers: {
-                        before: [ hmrTransformer() ]
+                        before: [ rhTransformer() ]
                     }
                 }
             }]
@@ -77,22 +77,22 @@ module.exports = {
 
 Although they shouldn't be needed for normal use cases, the transformers has a few options:
 
-Usage: `hmrTransformer(options)`
+Usage: `rhTransformer(options)`
 
 Where `options` is an object with the following optional fields:
 
 - `disable`: force release mode, disregarding `NODE_ENV` value,
 - `keepArrows`: opt-out of arrow functions rewriting; this can avoid a lot of extra code (and maybe subtle issues) when targeting ES5 instead of ES6,
-- `hmrRuntime`: (advanced) specify an alternative module to be required for the client HMR runtime logic.
+- `rhRuntime`: (advanced) specify an alternative module to be required for the client hot-loading runtime logic.
 
-Example: `hmrTransformer({ keepArrows: true })`
+Example: `rhTransformer({ keepArrows: true })`
 
 ### Attention NODE_ENV
 
 You must set the `NODE_ENV` environment (e.g. `process.env.NODE_ENV`) to `"production"` to disable the transform.
 You will see this message in the console:
 ```
-[react-hmr-ts] disabled for production
+[react-hot-ts] disabled for production
 ```
 *Note: Webpack's `mode` is [not sufficient](https://github.com/webpack/webpack/issues/7074).*
 
@@ -101,7 +101,7 @@ You will see this message in the console:
 Once the compiler transformation is in place, you just need to wrap your root `ReactDOM.render` call:
 
 ```typescript
-import { hot } from 'react-hmr-ts';
+import { hot } from 'react-hot-ts';
 
 hot(module)( ReactDOM.render(<App/>) );
 ```

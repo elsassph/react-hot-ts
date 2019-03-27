@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { render } from 'react-dom';
-import { hot } from 'react-hmr-ts';
+import { hot } from 'react-hot-ts';
 import App from './app';
 
 // In dev HMR mode, `index.tsx` is re-executed on each change

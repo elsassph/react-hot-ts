@@ -1,6 +1,6 @@
 
 const { FuseBox, WebIndexPlugin } = require('fuse-box');
-const hmrTransformer = require('react-hmr-ts/lib/transformer');
+const rhTransformer = require('react-hot-ts/lib/transformer');
 
 const fuse = FuseBox.init({
     homeDir : "src",
@@ -16,7 +16,7 @@ const fuse = FuseBox.init({
     },
     transformers: {
         // React HMR using a compiler transformation
-        before: [hmrTransformer()]
+        before: [rhTransformer()]
     }
 });
 fuse.dev();

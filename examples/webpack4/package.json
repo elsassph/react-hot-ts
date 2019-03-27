@@ -15,7 +15,7 @@
     "@types/react-dom": "^16.8.3",
     "react": "^16.8.4",
     "react-dom": "^16.8.4",
-    "react-hot-ts": "^0.7.0"
+    "react-hot-ts": "^0.7.2"
   },
   "devDependencies": {
     "fork-ts-checker-webpack-plugin": "^1.0.0",

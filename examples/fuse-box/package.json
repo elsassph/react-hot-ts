@@ -13,7 +13,7 @@
     "@types/react": "^16.8.8",
     "@types/react-dom": "^16.8.3",
     "fuse-box": "^3.7.1",
-    "react-hot-ts": "^0.7.0",
+    "react-hot-ts": "^0.7.2",
     "terser": "^3.17.0",
     "typescript": "^3.3.4000",
     "uglify-js": "^3.5.1"

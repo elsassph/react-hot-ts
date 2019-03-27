@@ -10,7 +10,7 @@ type ReactProxies = { [id: string]: ReactProxy };
 
 type HotCallback = (forceUpdate: (element: any) => void) => void;
 
-type WebModule = {
+type WebModule = NodeModule & {
 	hot?: { accept: () => void }
 };
 
@@ -21,17 +21,18 @@ const getForceUpdate = require('react-deep-force-update');
 
 const g: { _hmr_proxies_?: ReactProxies } = global as any;
 const proxies = (g._hmr_proxies_ = g._hmr_proxies_ || {});
-let updateTimer: number;
+let updateTimer: number = 0;
 let updateCallback: HotCallback;
 
 /** Notification that some component was updated */
 export function listen(cb: HotCallback) {
+	if (updateTimer) resetTimer();
 	updateCallback = cb;
 }
 
 /** Hot update helper */
 export function hot(
-	module: WebModule,
+	module?: WebModule,
 	accept?: (module: WebModule, proxies: ReactProxies) => void
 ) {
 	if (accept) {
@@ -68,12 +69,17 @@ export function register(type: any, name: string, fileName: string) {
 	const proxy = proxies[key];
 	if (proxy) {
 		proxy.update(type);
-		clearTimeout(updateTimer);
-		updateTimer = window.setTimeout(notify, 100);
+		resetTimer();
 	}
 }
 
+function resetTimer() {
+	clearTimeout(updateTimer);
+	updateTimer = window.setTimeout(notify, 100);
+}
+
 function notify() {
+	updateTimer = 0;
 	updateCallback && updateCallback(getForceUpdate(require('react')));
 }
 

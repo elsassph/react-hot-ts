@@ -13,7 +13,7 @@ Add React hot-reload (live update without losing state) in your TypeScript proje
 
 - Compile-time transformation is done using a TypeScript compiler hook,
 - Supports both React component classes and functional components,
-- Reliable hot-reload feature based on Dan Abramov's [react-proxy][5] (for ES5) or [react-stand-in][6] for ES6 (just alias),
+- Reliable hot-reload feature based on Dan Abramov's [react-proxy][5] (for ES5) or [react-stand-in][6] for ES6 (needs alias),
 - Support both ES5 and ES6 compilation targets.
 
 ## Bonus
@@ -111,6 +111,18 @@ When building for release, only the HMR runtime will be replaced by a no-op.
 Now run Webpack dev server and enjoy live component updates!
 
 ## Known issues
+
+### Targeting ES6
+
+If you target ES6 with the TypeScript compiler, you will run into runtime errors like:
+
+    Uncaught TypeError: Cannot convert undefined or null to object
+
+The reason is that `react-proxy` isn't ES6-friendly, and the solution is to install `react-stand-in`
+and add an alias in your bundler to remap the former:
+
+- https://webpack.js.org/configuration/resolve/#resolvealias
+- https://fuse-box.org/docs/development/configuration#alias
 
 ### Only `.tsx` files are considered
 

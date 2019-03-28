@@ -11,15 +11,15 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@types/react": "^16.8.8",
-    "@types/react-dom": "^16.8.3",
     "react": "^16.8.4",
-    "react-dom": "^16.8.4",
-    "react-hot-ts": "^0.7.2"
+    "react-dom": "^16.8.4"
   },
   "devDependencies": {
+    "@types/react": "^16.8.8",
+    "@types/react-dom": "^16.8.3",
     "fork-ts-checker-webpack-plugin": "^1.0.0",
     "html-webpack-plugin": "^3.2.0",
+    "react-hot-ts": "^0.7.2",
     "shx": "^0.3.2",
     "webpack": "^4.29.6",
     "webpack-cli": "^3.3.0",

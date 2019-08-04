@@ -2,10 +2,10 @@ import { assert } from 'chai';
 import { hot } from 'react-hot-ts';
 
 import test4, { test2, test7, test8 } from './cases/functions';
-import Test2, { Test1 } from './cases/classes';
+import Test2, { Test1, Test6 } from './cases/classes';
 import Wrapped from './cases/Wrapped';
 
-const cases = [
+const cases: any[] = [
     function default_export_function_with_props() {
         assert.equal(test4({}), 4);
     },
@@ -24,6 +24,10 @@ const cases = [
     function export_arrow_function_forward() {
         assert.deepEqual(new Test2().on1(1, 2), [1, 2]);
         assert.deepEqual(new Test2().on2(1, 2, 3), [1, 2, 3]);
+    },
+    function export_async_arrow_function() {
+      return new Test6().asyncMethod().then(res => assert.equal(res, 1))
+
     },
     function export_class() {
         assert.equal(new Test1().render(), 1);
@@ -48,12 +52,14 @@ const cases = [
     }
 ];
 
-cases.forEach(test => {
-    console.log('-', test.name);
-    try {
-        test();
-    } catch (err) {
-        console.log('FAIL:', err.message);
-        process.exit(1);
-    }
-});
+cases.reduce((promise, test) => {
+    return promise.then(() => {
+        console.log('-', test.name);
+        try {
+            return Promise.resolve(test())
+        } catch (err) {
+            console.log('FAIL:', err.message);
+            process.exit(1);
+        }
+    })
+}, Promise.resolve())

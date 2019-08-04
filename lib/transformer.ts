@@ -121,9 +121,10 @@ function transformArrows(members: ts.NodeArray<ts.ClassElement>) {
 			if (!body) return member;
 			const name = getValueName(member);
 			const protoName = '_hmr_' + name;
+			const modifiers = getModifiers(fun.modifiers)
 			// create new prototype method with arrow function body
 			extraMembers.push(ts.createMethod(
-				undefined, [ts.createModifier(ts.SyntaxKind.PrivateKeyword)], undefined,
+				undefined, modifiers, undefined,
 				protoName, undefined, undefined,
 				fun.parameters, fun.type, body));
 			// replace arrow function body to invoke new method
@@ -211,6 +212,21 @@ function getBody(node: ts.FunctionLike) {
 		return node.body;
 	}
 	return undefined;
+}
+
+function getModifiers(modifiers?: ts.ModifiersArray) {
+	let newModifiers = [ts.createModifier(ts.SyntaxKind.PrivateKeyword)]
+
+	if (modifiers) {
+		return [
+			...newModifiers,
+			...modifiers.filter((m) =>
+				m.kind !== ts.SyntaxKind.PublicKeyword &&
+				m.kind !== ts.SyntaxKind.ProtectedKeyword &&
+				m.kind !== ts.SyntaxKind.PrivateKeyword)
+		]
+	}
+	return newModifiers
 }
 
 function getValueName(node: ts.NamedDeclaration) {

@@ -34,3 +34,9 @@ export const Test4 = class NotTest4 extends Component {
 
 class Test5 {
 }
+
+export class Test6 extends React.Component {
+    asyncMethod = async () => {
+        return await new Promise((res) => res(1))
+    };
+}

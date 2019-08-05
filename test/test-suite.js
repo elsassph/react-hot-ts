@@ -15,6 +15,7 @@ const EXPECT_PROXY = process.env.NODE_ENV === 'production' ? '' : `
 + Test1 {{DIR}}/src/cases/classes.tsx function ${ANON_CLASS}
 + Test2 {{DIR}}/src/cases/classes.tsx function Test2
 + Test4 {{DIR}}/src/cases/classes.tsx function NotTest4
++ Test6 {{DIR}}/src/cases/classes.tsx function Test6
 + Wrapped {{DIR}}/src/cases/Wrapped.tsx function Wrapped
 + Wrapped_1 {{DIR}}/src/cases/Wrapped.tsx function Wrapped`;
 
@@ -25,6 +26,7 @@ const EXPECT_TESTS = `
 - export_function_without_props
 - export_default_class
 - export_arrow_function_forward
+- export_async_arrow_function
 - export_class
 - wrapped_default_renamed
 - patch_react_for_development

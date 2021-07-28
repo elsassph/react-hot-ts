@@ -20,7 +20,7 @@ type rhTransformerOptions = {
  * TypeScript AST transformer
  * Wraps React classes and functional components for HMR
  */
-function rhTransformer(options: rhTransformerOptions): (context: ts.TransformationContext) => ts.Visitor {
+function rhTransformer(options?: rhTransformerOptions): (context: ts.TransformationContext) => ts.Visitor {
 	const disabled = applyOptions(options);
 	if (disabled || process.env.NODE_ENV === 'production') {
 		console.log('[react-hot-ts] disabled for production');

@@ -1,7 +1,7 @@
-const { exec } = require('child_process');
-const printDiff = require('print-diff');
+import { exec } from 'child_process';
+import printDiff = require('print-diff');
 
-const ANON_CLASS = process.argv.length > 1 && process.argv[2] == 'es6' ? 'Component' : 'class_1';
+const ANON_CLASS = process.argv.length > 1 && process.argv[2] === 'es6' ? 'Component' : 'class_1';
 
 const EXPECT_PROXY = process.env.NODE_ENV === 'production' ? '' : `
 + test1 {{DIR}}/src/cases/functions.tsx function test1
@@ -50,6 +50,6 @@ exec('node test/dist/test.js', (error, stdout, stderr) => {
     }
 });
 
-function strip(s) {
-    return s.trim().split(/[\r\n]/g).map(s => s.trim()).join('\n');
+function strip(s: string) {
+    return s.trim().split(/[\r\n]/g).map((s: string) => s.trim()).join('\n');
 }

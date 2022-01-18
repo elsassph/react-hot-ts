@@ -6,6 +6,7 @@ interface ReactProxy {
 	get(): any;
 	update(type: any): void;
 }
+
 type ReactProxies = { [id: string]: ReactProxy };
 
 type HotCallback = (forceUpdate: (element: any) => void) => void;
@@ -24,6 +25,8 @@ const proxies = (g._hmr_proxies_ = g._hmr_proxies_ || {});
 let updateTimer: number = 0;
 let updateCallback: HotCallback;
 
+export * from './lib/transformer';
+
 /** Notification that some component was updated */
 export function listen(cb: HotCallback) {
 	if (updateTimer) resetTimer();
@@ -36,12 +39,12 @@ export function hot(
 	accept?: (module: WebModule, proxies: ReactProxies) => void
 ) {
 	if (accept) {
-		accept(module, proxies);
+		accept(module!, proxies);
 	} else if (module && module.hot) {
 		module.hot.accept();
 	}
 
-	return function(element) {
+	return function(element: any) {
 		listen(function(forceUpdate) {
 			forceUpdate(element);
 		});

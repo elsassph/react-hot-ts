@@ -49,7 +49,7 @@ Just 2 steps:
 2. Configure the TypeScript loader with a custom transformer (you can keep it in your production builds)
 
 ```javascript
-const rhTransformer = require('react-hot-ts/lib/transformer');
+const { rhTransformer } = require('react-hot-ts');
 /*...*/
 
 module.exports = {
@@ -100,7 +100,7 @@ You will see this message in the console:
 
 Once the compiler transformation is in place, you just need to wrap your root `ReactDOM.render` call:
 
-```typescript
+```jsx
 import { hot } from 'react-hot-ts';
 
 hot(module)( ReactDOM.render(<App/>) );
@@ -134,7 +134,7 @@ If you use `.ts` and manual `React.createComponent` code, it won't be registered
 
 Non-exported class or function won't be reloaded if their reference is kept outside the module.
 
-```typescript
+```jsx
 // A.js
 class A extends Component {...};
 export function provideA() {

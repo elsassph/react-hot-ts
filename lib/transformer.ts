@@ -20,7 +20,7 @@ type rhTransformerOptions = {
  * TypeScript AST transformer
  * Wraps React classes and functional components for HMR
  */
-function rhTransformer(options?: rhTransformerOptions): (context: ts.TransformationContext) => ts.Visitor {
+export function rhTransformer(options?: rhTransformerOptions): (context: ts.TransformationContext) => ts.Visitor {
 	const disabled = applyOptions(options);
 	if (disabled || process.env.NODE_ENV === 'production') {
 		console.log('[react-hot-ts] disabled for production');
@@ -32,7 +32,7 @@ function rhTransformer(options?: rhTransformerOptions): (context: ts.Transformat
 /**
  * Production transformer replaces the HMR logic with a no-op
  */
-function prodTransformer(context: ts.TransformationContext) {
+function prodTransformer() {
 	const visitor = (node: ts.Node) => {
 		if (isSourceFileObject(node)) {
 			// replace `react-hot-ts` imports by a cold version for production
@@ -42,12 +42,12 @@ function prodTransformer(context: ts.TransformationContext) {
 						&& ts.isStringLiteral(s.moduleSpecifier)
 						&& s.moduleSpecifier.text === 'react-hot-ts'
 					) {
-						return ts.updateImportDeclaration(s,
+						return ts.factory.updateImportDeclaration(s,
 							s.decorators, s.modifiers, s.importClause,
-							ts.createStringLiteral('react-hot-ts/cold.js'));
+							ts.factory.createStringLiteral('react-hot-ts/cold.js'));
 					} else return s;
 				});
-				return ts.updateSourceFileNode(node, statements);
+				return ts.factory.updateSourceFile(node, statements);
 			}
 		}
 		return node;
@@ -60,19 +60,19 @@ function prodTransformer(context: ts.TransformationContext) {
  * so that they can be proxied and updated live if they happen
  * to be React components/functions
  */
-function devTransformer(context: ts.TransformationContext) {
+function devTransformer() {
 	const visitor = (node: ts.Node) => {
 		if (isSourceFileObject(node) && !shouldSkipSourceFile(node)) {
 			// add exports registration
 			const statements: ts.Statement[] = [
 				...visitStatements(node.statements),
-				ts.createEmptyStatement(),
-				ts.createStatement(ts.createImmediatelyInvokedFunctionExpression([
+				ts.factory.createEmptyStatement(),
+				ts.factory.createExpressionStatement(ts.factory.createImmediatelyInvokedFunctionExpression([
 					...createHotStatements(node.fileName),
-					...createRegistrations(node.symbol.exports, node.fileName)
+					...createRegistrations(node.symbol.exports!, node.fileName)
 				]))
 			];
-			return ts.updateSourceFileNode(node, statements);
+			return ts.factory.updateSourceFile(node, statements);
 		}
 		return node;
 	};
@@ -82,7 +82,7 @@ function devTransformer(context: ts.TransformationContext) {
 /**
  * Apply defaults and user options
  */
-function applyOptions(options: rhTransformerOptions) {
+function applyOptions(options?: rhTransformerOptions) {
 	rhRuntime = RH_RUNTIME;
 	if (!options) return false;
 
@@ -96,19 +96,19 @@ function applyOptions(options: rhTransformerOptions) {
 	return !!options.disable;
 }
 
-function visitStatements(statements: ts.NodeArray<ts.Statement>) {
+function visitStatements(statements: ts.NodeArray<ts.Statement>): ts.NodeArray<ts.Statement> {
 	if (keepArrows) return statements;
 
 	return Array.prototype.map.call(statements, (statement: ts.Statement) => {
 		if (ts.isClassDeclaration(statement) && hasArrowFunctions(statement)) {
 			const members = transformArrows(statement.members);
-			return ts.updateClassDeclaration(
+			return ts.factory.updateClassDeclaration(
 				statement, statement.decorators, statement.modifiers,
-				ts.createIdentifier(statement.name.text), statement.typeParameters,
+				ts.factory.createIdentifier(statement!.name!.text), statement.typeParameters,
 				statement.heritageClauses, members);
 		}
 		return statement;
-	});
+	}) as unknown as ts.NodeArray<ts.Statement>;
 }
 
 // transform arrow-function members into prototype-backed functions
@@ -123,20 +123,20 @@ function transformArrows(members: ts.NodeArray<ts.ClassElement>) {
 			const protoName = '_hmr_' + name;
 			const modifiers = getModifiers(fun.modifiers)
 			// create new prototype method with arrow function body
-			extraMembers.push(ts.createMethod(
+			extraMembers.push(ts.factory.createMethodDeclaration(
 				undefined, modifiers, undefined,
 				protoName, undefined, undefined,
 				fun.parameters, fun.type, body));
 			// replace arrow function body to invoke new method
-			const wrapperBody = ts.createCall(
+			const wrapperBody = ts.factory.createCallExpression(
 				createFieldApplyExpression(protoName), undefined,
-				[ts.createThis(), ts.createIdentifier('args')]
+				[ts.factory.createThis(), ts.factory.createIdentifier('args')]
 			);
-			const wrapper = ts.createArrowFunction(undefined, undefined,
+			const wrapper = ts.factory.createArrowFunction(undefined, undefined,
 					[createDotArgs()], fun.type, undefined, wrapperBody)
-			return ts.updateProperty(
+			return ts.factory.updatePropertyDeclaration(
 				member, member.decorators, member.modifiers,
-				getValueName(member), undefined, undefined, wrapper);
+				getValueName(member!)!, undefined, undefined, wrapper);
 		}
 		return member;
 	});
@@ -145,12 +145,12 @@ function transformArrows(members: ts.NodeArray<ts.ClassElement>) {
 
 function createDotArgs(): any {
 	// `...args`
-	return ts.createParameter(undefined, undefined, ts.createToken(ts.SyntaxKind.DotDotDotToken), 'args');
+	return ts.factory.createParameterDeclaration(undefined, undefined, ts.factory.createToken(ts.SyntaxKind.DotDotDotToken), 'args');
 }
 
 function createFieldApplyExpression(name: string) {
 	// `this.field.apply`
-	return ts.createPropertyAccess(ts.createPropertyAccess(ts.createThis(), name), 'apply');
+	return ts.factory.createPropertyAccessExpression(ts.factory.createPropertyAccessExpression(ts.factory.createThis(), name), 'apply');
 }
 
 function hasArrowFunctions(decl: ts.ClassLikeDeclaration) {
@@ -160,7 +160,7 @@ function hasArrowFunctions(decl: ts.ClassLikeDeclaration) {
 function shouldSkipSourceFile(node: SourceFileObject) {
 	if (node.__explored__) return true;
 	node.__explored__ = true;
-	return node.isDeclarationFile || !node.fileName.endsWith('.tsx') || node.symbol.exports.size == 0;
+	return node.isDeclarationFile || !node.fileName.endsWith('.tsx') || node!.symbol!.exports!.size == 0;
 }
 
 function createHotStatements(fileName: string): ts.Statement[] {
@@ -178,7 +178,7 @@ function createRegistrations(exports: Map<string, SymbolObject>, fileName: strin
 
 	exports.forEach((value, key) => {
 		// find the declaration name
-		let name = getValueName(value.valueDeclaration) || value.name || key;
+		let name = getValueName(value.valueDeclaration!) || value.name || key;
 		if (name === 'default' && value.declarations) {
 			const declName = getDeclName(value.declarations[0]);
 			if (declName) name = declName;
@@ -205,9 +205,9 @@ function getFileName(fileName: string) {
 	return m && m[1] ? m[1] : undefined;
 }
 
-function getBody(node: ts.FunctionLike) {
+function getBody(node: ts.SignatureDeclaration) {
 	if (ts.isArrowFunction(node)) {
-		return ts.isBlock(node.body) ? node.body : ts.createBlock([ts.createReturn(node.body)]);
+		return ts.isBlock(node.body) ? node.body : ts.factory.createBlock([ts.factory.createReturnStatement(node.body)]);
 	} else if (ts.isFunctionDeclaration(node)) {
 		return node.body;
 	}
@@ -215,7 +215,7 @@ function getBody(node: ts.FunctionLike) {
 }
 
 function getModifiers(modifiers?: ts.ModifiersArray) {
-	let newModifiers = [ts.createModifier(ts.SyntaxKind.PrivateKeyword)]
+	let newModifiers = [ts.factory.createModifier(ts.SyntaxKind.PrivateKeyword)]
 
 	if (modifiers) {
 		return [
@@ -289,5 +289,3 @@ function anonymize(o: any) {
 		if (t === 'object') anonymize(v);
 	}
 }
-
-export = rhTransformer;

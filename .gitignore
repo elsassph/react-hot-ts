@@ -1,8 +1,11 @@
 .vscode
 .idea/
 node_modules
+
 index.js
 index.d.ts
+cold.d.ts
+cold.js
 lib/*.js
 lib/*.d.ts
 test/dist
